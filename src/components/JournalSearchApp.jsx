@@ -570,6 +570,37 @@ const JournalSearchApp = () => {
           onClick={() => setShowSearchHistory(false)}
         />
       )}
+
+      {/* Footer */}
+      <footer className="mt-12 py-6 border-t border-gray-200 bg-white">
+        <div className="container mx-auto px-4 text-center text-sm text-gray-600">
+          <p>
+            Criado por{' '}
+            <a 
+              href="mailto:juliano.alves@ufsm.br" 
+              className="text-indigo-600 hover:text-indigo-800 font-medium"
+            >
+              Juliano Alves
+            </a>
+            {' '} - {' '}
+            <a 
+              href="mailto:juliano.alves@ufsm.br" 
+              className="text-indigo-600 hover:text-indigo-800"
+            >
+              juliano.alves@ufsm.br
+            </a>
+            {' '} - {' '}
+            <a 
+              href="https://www.iaprojetos.com.br" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-indigo-600 hover:text-indigo-800"
+            >
+              www.iaprojetos.com.br
+            </a>
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };
