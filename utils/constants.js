@@ -355,7 +355,7 @@ export const VALIDATION = {
 
 // URLs e endpoints (para futuras integrações)
 export const API_CONFIG = {
-  baseUrl: process.env.REACT_APP_API_URL || 'https://api.journalscope.app',
+  baseUrl: import.meta.env.VITE_API_URL || 'https://api.journalscope.app',
   endpoints: {
     journals: '/api/journals',
     search: '/api/search',
@@ -368,7 +368,7 @@ export const API_CONFIG = {
 
 // Configurações de analytics (para futuro)
 export const ANALYTICS_CONFIG = {
-  enabled: process.env.NODE_ENV === 'production',
+  enabled: import.meta.env.MODE === 'production',
   events: {
     search: 'journal_search',
     filter: 'filter_applied',
@@ -421,10 +421,10 @@ export const META_CONFIG = {
 
 // Configuração de desenvolvimento
 export const DEV_CONFIG = {
-  enableDebug: process.env.NODE_ENV === 'development',
-  enableMockData: process.env.REACT_APP_USE_MOCK_DATA === 'true',
-  logLevel: process.env.REACT_APP_LOG_LEVEL || 'info',
-  showPerformanceMetrics: process.env.REACT_APP_SHOW_PERF === 'true'
+  enableDebug: import.meta.env.MODE === 'development',
+  enableMockData: import.meta.env.VITE_USE_MOCK_DATA === 'true',
+  logLevel: import.meta.env.VITE_LOG_LEVEL || 'info',
+  showPerformanceMetrics: import.meta.env.VITE_SHOW_PERF === 'true'
 };
 
 // Freeze objects para evitar modificações acidentais
