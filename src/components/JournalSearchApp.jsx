@@ -12,7 +12,7 @@ import {
   X,
   Clock
 } from 'lucide-react';
-import { useJournalData } from '../../hooks';
+import { useEmbeddedData } from '../../hooks';
 import { exportAsCSV, exportAsExcel } from '../../utils';
 import PerformanceMonitor from './PerformanceMonitor';
 
@@ -40,7 +40,7 @@ const JournalSearchApp = () => {
     exportToCSV,
     clearAllFilters,
     applyPresetFilter
-  } = useJournalData();
+  } = useEmbeddedData();
 
   // Estados adicionais para melhorias
   const [selectedJournals, setSelectedJournals] = useState(new Set());
