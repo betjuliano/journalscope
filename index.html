@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <!-- Meta Tags Básicas -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#2563eb" />
+  
+  <!-- Título e Descrição -->
+  <title>JournalScope - Sistema de Consulta de Journals Acadêmicos</title>
+  <meta name="description" content="Ferramenta completa para consulta e análise de classificações ABDC, ABS e Wiley de journals acadêmicos. Base de dados unificada com mais de 4.000 periódicos científicos." />
+  <meta name="keywords" content="journals acadêmicos, ABDC, ABS, Wiley, classificação de periódicos, pesquisa acadêmica, publicação científica, journals científicos, periódicos acadêmicos" />
+  <meta name="author" content="JournalScope Team" />
+  
+  <!-- Favicons -->
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  
+  <!-- Favicon para diferentes tamanhos -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png" />
+  
+  <!-- Manifest para PWA -->
+  <link rel="manifest" href="/manifest.json" />
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://journalscope.app/" />
+  <meta property="og:title" content="JournalScope - Sistema de Consulta de Journals Acadêmicos" />
+  <meta property="og:description" content="Ferramenta completa para consulta e análise de classificações ABDC, ABS e Wiley de journals acadêmicos. Base de dados unificada com mais de 4.000 periódicos." />
+  <meta property="og:image" content="/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale" content="pt_BR" />
+  <meta property="og:site_name" content="JournalScope" />
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://journalscope.app/" />
+  <meta name="twitter:title" content="JournalScope - Sistema de Consulta de Journals Acadêmicos" />
+  <meta name="twitter:description" content="Ferramenta completa para consulta e análise de classificações ABDC, ABS e Wiley de journals acadêmicos." />
+  <meta name="twitter:image" content="/twitter-image.png" />
+  <meta name="twitter:creator" content="@journalscope" />
+  
+  <!-- Meta Tags para Motores de Busca -->
+  <meta name="robots" content="index, follow" />
+  <meta name="googlebot" content="index, follow" />
+  <meta name="bingbot" content="index, follow" />
+  <link rel="canonical" href="https://journalscope.app/" />
+  
+  <!-- Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "JournalScope",
+    "description": "Sistema de Consulta de Journals Acadêmicos",
+    "url": "https://journalscope.app",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Web Browser",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "creator": {
+      "@type": "Organization",
+      "name": "JournalScope Team"
+    },
+    "featureList": [
+      "Consulta de classificações ABDC",
+      "Consulta de classificações ABS", 
+      "Consulta de dados Wiley",
+      "Exportação de dados",
+      "Filtros avançados",
+      "Estatísticas detalhadas"
+    ]
+  }
+  </script>
+  
+  <!-- DNS Prefetch para Performance -->
+  <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+  <link rel="dns-prefetch" href="//cdnjs.cloudflare.com" />
+  
+  <!-- Preconnect para Fontes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  
+  <!-- Fontes do Google (opcional - pode ser removido se usar apenas Tailwind) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  
+  <!-- CSS Inline para Loading -->
+  <style>
+    /* CSS crítico para carregamento inicial */
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      background-color: #f8fafc;
+    }
+    
+    code {
+      font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+        monospace;
+    }
+    
+    /* Loading spinner inicial */
+    .initial-loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #f0f7ff 0%, #e0f0ff 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    
+    .loading-logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #2563eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+    }
+    
+    .loading-logo::before {
+      content: '🔬';
+      font-size: 40px;
+    }
+    
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e2e8f0;
+      border-top: 4px solid #2563eb;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    
+    .loading-text {
+      color: #64748b;
+      font-size: 16px;
+      font-weight: 500;
+      text-align: center;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Ocultar loading quando React carregar */
+    #root:not(:empty) ~ .initial-loading {
+      display: none;
+    }
+  </style>
+  
+  <!-- Meta Tags para Performance -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="msapplication-tap-highlight" content="no" />
+  
+  <!-- Meta Tags para PWA -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="JournalScope" />
+  <meta name="msapplication-TileImage" content="/mstile-150x150.png" />
+  <meta name="msapplication-TileColor" content="#2563eb" />
+  
+  <!-- Configuração do Service Worker -->
+  <meta name="serviceWorker" content="/sw.js" />
+  
+  <!-- CSS de Reset Básico -->
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    
+    html {
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+    
+    /* Melhorar acessibilidade */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+    
+    /* Tema escuro básico */
+    @media (prefers-color-scheme: dark) {
+      body {
+        background-color: #0f172a;
+        color: #f1f5f9;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Div principal onde o React será montado -->
+  <div id="root"></div>
+  
+  <!-- Loading inicial (será ocultado quando React carregar) -->
+  <div class="initial-loading">
+    <div class="loading-logo"></div>
+    <div class="loading-spinner"></div>
+    <div class="loading-text">
+      Carregando JournalScope...<br>
+      <small>Sistema de Consulta de Journals Acadêmicos</small>
+    </div>
+  </div>
+  
+  <!-- Noscript para usuários sem JavaScript -->
+  <noscript>
+    <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+      <h1>🔬 JournalScope</h1>
+      <h2>JavaScript Necessário</h2>
+      <p>O JournalScope requer JavaScript para funcionar corretamente.</p>
+      <p>Por favor, habilite JavaScript no seu navegador e recarregue a página.</p>
+      <hr>
+      <p><strong>JournalScope</strong> - Sistema de Consulta de Journals Acadêmicos</p>
+      <p>Ferramenta para consulta de classificações ABDC, ABS e Wiley</p>
+    </div>
+  </noscript>
+  
+  <!-- Mensagem para navegadores muito antigos -->
+  <!--[if lt IE 11]>
+    <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif; background: #fee; border: 2px solid #f99;">
+      <h2>Navegador Não Suportado</h2>
+      <p>O JournalScope não é compatível com este navegador.</p>
+      <p>Por favor, atualize para uma versão mais recente do Chrome, Firefox, Safari ou Edge.</p>
+    </div>
+  <![endif]-->
+  
+  <!-- Script para detectar JavaScript e remover loading -->
+  <script type="module">
+    // Remover loading quando a página estiver carregada
+    window.addEventListener('load', function() {
+      const loading = document.querySelector('.initial-loading');
+      if (loading && document.getElementById('root').children.length > 0) {
+        loading.style.opacity = '0';
+        loading.style.transition = 'opacity 0.5s ease-out';
+        setTimeout(() => {
+          loading.remove();
+        }, 500);
+      }
+    });
+    
+    // Configurações globais
+    window.JOURNALSCOPE_CONFIG = {
+      version: '1.0.0',
+      buildDate: new Date().toISOString(),
+      environment: import.meta.env.MODE,
+      features: {
+        analytics: false,
+        serviceWorker: true,
+        darkMode: true
+      }
+    };
+    
+    // Detecção de recursos do navegador
+    window.BROWSER_SUPPORT = {
+      fileReader: typeof FileReader !== 'undefined',
+      localStorage: typeof Storage !== 'undefined',
+      serviceWorker: 'serviceWorker' in navigator,
+      clipboard: navigator.clipboard !== undefined,
+      webShare: navigator.share !== undefined
+    };
+    
+    // Log de informações de debug (apenas em desenvolvimento)
+    if (import.meta.env.DEV) {
+      console.log('🔬 JournalScope v1.0.0');
+      console.log('Browser Support:', window.BROWSER_SUPPORT);
+      console.log('Config:', window.JOURNALSCOPE_CONFIG);
+    }
+  </script>
+  
+  <!-- Analytics (apenas em produção) -->
+  <!-- Adicionar código do Google Analytics ou outra ferramenta aqui -->
+  
+  <!-- Service Worker Registration -->
+  <script type="module">
+    if ('serviceWorker' in navigator && import.meta.env.PROD) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then((registration) => {
+            console.log('SW registered: ', registration);
+          })
+          .catch((registrationError) => {
+            console.log('SW registration failed: ', registrationError);
+          });
+      });
+    }
+  </script>
+
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>
