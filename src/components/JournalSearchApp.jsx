@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useJournalData } from '../../hooks';
 import { exportAsCSV, exportAsExcel } from '../../utils';
+import PerformanceMonitor from './PerformanceMonitor';
 
 const JournalSearchApp = () => {
   // Estados originais do hook
@@ -601,6 +602,9 @@ const JournalSearchApp = () => {
           </p>
         </div>
       </footer>
+
+      {/* Performance Monitor (apenas em desenvolvimento) */}
+      <PerformanceMonitor isVisible={process.env.NODE_ENV === 'development'} />
     </div>
   );
 };

@@ -9,11 +9,18 @@ function App() {
   const {
     isLoading,
     error,
+    processingStatus,
+    dataSource,
     reloadData
   } = useJournalData();
 
   if (isLoading) {
-    return <LoadingScreen />;
+    return (
+      <LoadingScreen 
+        processingStatus={processingStatus}
+        dataSource={dataSource}
+      />
+    );
   }
 
   if (error) {

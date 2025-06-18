@@ -220,7 +220,7 @@ const useDataProcessor = () => {
   }, []);
 
   /**
-   * Processa e unifica todos os dados
+   * Processa e unifica todos os dados com otimizações de performance
    */
   const processAllData = useCallback(async () => {
     try {
@@ -234,63 +234,106 @@ const useDataProcessor = () => {
         wiley: { count: 0, loaded: false }
       });
       
-      // Verificar se já existem dados processados em cache
-      if (window.processedJournalsData && window.processedJournalsData.length > 0) {
-        setProcessingStatus('Usando dados em cache...');
+      // Verificar cache primeiro (mais rápido)
+      const cachedData = localStorage.getItem('journalscope_processed_data');
+      const cacheTimestamp = localStorage.getItem('journalscope_cache_timestamp');
+      const cacheExpiry = 24 * 60 * 60 * 1000; // 24 horas
+      
+      if (cachedData && cacheTimestamp) {
+        const isExpired = Date.now() - parseInt(cacheTimestamp) > cacheExpiry;
         
-        // Atualizar contadores baseado nos dados existentes
-        const withABDC = window.processedJournalsData.filter(j => j.abdc).length;
-        const withABS = window.processedJournalsData.filter(j => j.abs).length;
-        const withWiley = window.processedJournalsData.filter(j => j.wileySubject).length;
-        
-        setDataSource({
-          abdc: { count: withABDC, loaded: true },
-          abs: { count: withABS, loaded: true },
-          wiley: { count: withWiley, loaded: true }
-        });
-        
-        setProcessingStatus(`Cache carregado! ${window.processedJournalsData.length} journals disponíveis.`);
-        setIsProcessing(false);
-        return window.processedJournalsData;
+        if (!isExpired) {
+          setProcessingStatus('Carregando dados do cache...');
+          
+          const parsedData = JSON.parse(cachedData);
+          
+          // Atualizar contadores baseado nos dados existentes
+          const withABDC = parsedData.filter(j => j.abdc).length;
+          const withABS = parsedData.filter(j => j.abs).length;
+          const withWiley = parsedData.filter(j => j.wileySubject).length;
+          
+          setDataSource({
+            abdc: { count: withABDC, loaded: true },
+            abs: { count: withABS, loaded: true },
+            wiley: { count: withWiley, loaded: true }
+          });
+          
+          setProcessingStatus(`Cache carregado! ${parsedData.length} journals disponíveis.`);
+          setIsProcessing(false);
+          return parsedData;
+        }
       }
       
-      // Processar todos os arquivos em paralelo
-      const [abdcJournals, absJournals, wileyJournals] = await Promise.all([
-        processABDCData(),
-        processABSData(),
-        processWileyData()
-      ]);
+      // Processar arquivos com carregamento progressivo
+      setProcessingStatus('Iniciando carregamento...');
+      
+      const results = {};
+      const processors = [
+        { name: 'abdc', fn: processABDCData },
+        { name: 'abs', fn: processABSData },
+        { name: 'wiley', fn: processWileyData }
+      ];
+      
+      // Processar em paralelo com updates progressivos
+      await Promise.all(
+        processors.map(async ({ name, fn }) => {
+          try {
+            results[name] = await fn();
+          } catch (error) {
+            console.warn(`Erro ao carregar ${name}:`, error);
+            results[name] = {};
+          }
+        })
+      );
       
       setProcessingStatus('Unificando dados...');
       
-      // Criar conjunto único de journals
-      const allJournalNames = new Set([
-        ...Object.keys(abdcJournals),
-        ...Object.keys(absJournals),
-        ...Object.keys(wileyJournals)
-      ]);
+      // Usar setTimeout para não bloquear a UI durante unificação
+      const unifiedData = await new Promise((resolve) => {
+        setTimeout(() => {
+          // Criar conjunto único de journals
+          const allJournalNames = new Set([
+            ...Object.keys(results.abdc || {}),
+            ...Object.keys(results.abs || {}),
+            ...Object.keys(results.wiley || {})
+          ]);
+          
+          // Criar tabela unificada em lotes para não bloquear UI
+          const unified = [];
+          const batchSize = 100;
+          const journalArray = Array.from(allJournalNames);
+          
+          for (let i = 0; i < journalArray.length; i += batchSize) {
+            const batch = journalArray.slice(i, i + batchSize);
+            
+            batch.forEach(journalKey => {
+              const abdcRating = results.abdc[journalKey] || "";
+              const absRating = results.abs[journalKey] || "";
+              const wileyInfo = results.wiley[journalKey] || {};
+              
+              unified.push({
+                journal: capitalizeJournalName(journalKey),
+                abdc: abdcRating,
+                abs: absRating,
+                wileySubject: wileyInfo.subjectArea || "",
+                wileyAPC: wileyInfo.apcUsd || ""
+              });
+            });
+          }
+          
+          // Ordenar por nome
+          unified.sort((a, b) => a.journal.localeCompare(b.journal));
+          resolve(unified);
+        }, 0);
+      });
       
-      // Criar tabela unificada
-      const unifiedData = [];
-      for (const journalKey of allJournalNames) {
-        const abdcRating = abdcJournals[journalKey] || "";
-        const absRating = absJournals[journalKey] || "";
-        const wileyInfo = wileyJournals[journalKey] || {};
-        
-        unifiedData.push({
-          journal: capitalizeJournalName(journalKey),
-          abdc: abdcRating,
-          abs: absRating,
-          wileySubject: wileyInfo.subjectArea || "",
-          wileyAPC: wileyInfo.apcUsd || ""
-        });
+      // Salvar no cache localStorage (mais persistente)
+      try {
+        localStorage.setItem('journalscope_processed_data', JSON.stringify(unifiedData));
+        localStorage.setItem('journalscope_cache_timestamp', Date.now().toString());
+      } catch (e) {
+        console.warn('Não foi possível salvar no cache:', e);
       }
-      
-      // Ordenar por nome
-      unifiedData.sort((a, b) => a.journal.localeCompare(b.journal));
-      
-      // Salvar dados processados em cache
-      window.processedJournalsData = unifiedData;
       
       setProcessingStatus(`Processamento concluído! ${unifiedData.length} journals processados.`);
       setIsProcessing(false);
@@ -309,8 +352,12 @@ const useDataProcessor = () => {
    * Limpa cache e reprocessa dados
    */
   const clearCacheAndReprocess = useCallback(async () => {
-    // Limpar cache
+    // Limpar cache da memória
     delete window.processedJournalsData;
+    
+    // Limpar cache do localStorage
+    localStorage.removeItem('journalscope_processed_data');
+    localStorage.removeItem('journalscope_cache_timestamp');
     
     // Reprocessar
     return await processAllData();
