@@ -37,7 +37,7 @@ const useEmbeddedData = () => {
         let embeddedData;
         
         try {
-          // Tentar importação dinâmica primeiro
+          // Caminho correto para build e dev
           const module = await import('../src/data/embeddedJournals.js');
           embeddedData = module.EMBEDDED_JOURNALS_DATA || module.default;
         } catch (importError) {
