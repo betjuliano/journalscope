@@ -1,9 +1,9 @@
-// Dados embarcados gerados automaticamente em 2025-06-18T04:37:37.801Z
+// Dados embarcados gerados automaticamente em 2025-06-18T04:46:23.655Z
 // Total de 4460 journals processados
 
 export const EMBEDDED_JOURNALS_DATA = {
   "version": "1.0.0",
-  "generatedAt": "2025-06-18T04:37:37.782Z",
+  "generatedAt": "2025-06-18T04:46:23.633Z",
   "stats": {
     "total": 4460,
     "withABDC": 2680,

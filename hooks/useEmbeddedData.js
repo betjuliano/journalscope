@@ -33,32 +33,47 @@ const useEmbeddedData = () => {
         setIsLoading(true);
         setError(null);
 
-        // Tentar carregar dados embarcados primeiro
-        try {
-          const embeddedModule = await import('../src/data/embeddedJournals.js');
-          const embeddedData = embeddedModule.EMBEDDED_JOURNALS_DATA || embeddedModule.default;
-          
-          if (embeddedData && embeddedData.data) {
-            console.log('⚡ Carregando dados embarcados (instantâneo)');
-            setJournalsData(embeddedData.data);
-            setStats(embeddedData.stats);
-            setIsLoading(false);
-            return;
-          }
-        } catch (embeddedError) {
-          console.warn('Dados embarcados não encontrados, usando fallback...');
-        }
-
-        // Fallback: usar sistema de cache existente
-        const { useJournalData } = await import('./useJournalData');
-        console.log('🔄 Usando sistema de cache como fallback');
+        // Carregar dados embarcados de forma síncrona para máxima performance
+        let embeddedData;
         
-        // Este é um fallback, o hook principal ainda funcionará
-        setError('Dados embarcados não disponíveis. Use: npm run generate-data');
-        setIsLoading(false);
+        try {
+          // Tentar importação dinâmica primeiro
+          const module = await import('../src/data/embeddedJournals.js');
+          embeddedData = module.EMBEDDED_JOURNALS_DATA || module.default;
+        } catch (importError) {
+          console.warn('Importação dinâmica falhou, tentando importação estática...');
+          
+          // Fallback: importação estática
+          try {
+            const { EMBEDDED_JOURNALS_DATA } = await import('../src/data/embeddedJournals.js');
+            embeddedData = EMBEDDED_JOURNALS_DATA;
+          } catch (staticError) {
+            throw new Error('Dados embarcados não encontrados. Execute: npm run generate-data');
+          }
+        }
+        
+        if (embeddedData && embeddedData.data) {
+          console.log('⚡ Carregando dados embarcados (instantâneo)');
+          console.log(`📊 Total de journals: ${embeddedData.data.length}`);
+          
+          setJournalsData(embeddedData.data);
+          setStats(embeddedData.stats || {
+            total: embeddedData.data.length,
+            withABDC: embeddedData.data.filter(j => j.abdc).length,
+            withABS: embeddedData.data.filter(j => j.abs).length,
+            withWiley: embeddedData.data.filter(j => j.wileySubject).length,
+            abdcDistribution: {},
+            absDistribution: {}
+          });
+          
+          setIsLoading(false);
+          return;
+        }
+        
+        throw new Error('Formato de dados inválido');
 
       } catch (err) {
-        console.error('Erro ao carregar dados:', err);
+        console.error('Erro ao carregar dados embarcados:', err);
         setError(err.message);
         setIsLoading(false);
       }

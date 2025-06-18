@@ -6,7 +6,8 @@
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "dist"
+        "distDir": "dist",
+        "buildCommand": "npm run build:vercel"
       }
     }
   ],
@@ -26,6 +27,11 @@
   "build": {
     "env": {
       "NODE_ENV": "production"
+    }
+  },
+  "functions": {
+    "src/data/embeddedJournals.js": {
+      "maxDuration": 30
     }
   }
 }
