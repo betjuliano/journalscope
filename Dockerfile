@@ -1,35 +1,34 @@
-# Multi-stage build para otimizar o tamanho da imagem
+# Build stage
 FROM node:18-alpine AS builder
 
-# Definir diretório de trabalho
 WORKDIR /app
 
-# Copiar arquivos de dependências
+# Copy package files
 COPY package*.json ./
 
-# Instalar dependências
-RUN npm ci --only=production
+# Install dependencies
+RUN npm install
 
-# Copiar código fonte
+# Copy source code
 COPY . .
 
-# Gerar dados embarcados
+# Generate embedded data
 RUN npm run generate-data
 
-# Build da aplicação
+# Build application
 RUN npm run build
 
-# Estágio de produção com Nginx
+# Production stage
 FROM nginx:alpine
 
-# Copiar arquivos buildados
+# Copy built files
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copiar configuração customizada do Nginx
+# Copy nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expor porta 80
+# Expose port
 EXPOSE 80
 
-# Comando para iniciar o Nginx
+# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
