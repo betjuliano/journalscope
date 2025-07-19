@@ -6,11 +6,15 @@ const LoadingScreen = ({
   dataSource = {
     abdc: { count: 0, loaded: false },
     abs: { count: 0, loaded: false },
-    wiley: { count: 0, loaded: false }
+    wiley: { count: 0, loaded: false },
+    jcr: { count: 0, loaded: false },
+    sjr: { count: 0, loaded: false },
+    citeScore: { count: 0, loaded: false },
+    predatory: { count: 0, loaded: false }
   } 
 }) => {
   // Calcular progresso
-  const totalSources = 3;
+  const totalSources = 7;
   const loadedSources = Object.values(dataSource).filter(source => source.loaded).length;
   const progressPercentage = (loadedSources / totalSources) * 100;
   
@@ -47,7 +51,7 @@ const LoadingScreen = ({
           <p className="text-gray-600 mb-6">{processingStatus}</p>
           
           {/* Status de carregamento dos arquivos */}
-          <div className="space-y-2 text-sm">
+          <div className="space-y-2 text-sm max-h-80 overflow-y-auto">
             <div className={`flex justify-between items-center p-3 rounded transition-all duration-300 ${
               dataSource.abdc.loaded ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-600'
             }`}>
@@ -81,6 +85,54 @@ const LoadingScreen = ({
             </div>
             
             <div className={`flex justify-between items-center p-3 rounded transition-all duration-300 ${
+              dataSource.jcr.loaded ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-600'
+            }`}>
+              <span className="flex items-center gap-2">
+                {dataSource.jcr.loaded ? (
+                  <CheckCircle className="h-4 w-4" />
+                ) : (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent"></div>
+                )}
+                JCR Database
+              </span>
+              <span className="font-medium">
+                {dataSource.jcr.loaded ? `${dataSource.jcr.count} journals ✓` : 'Carregando...'}
+              </span>
+            </div>
+            
+            <div className={`flex justify-between items-center p-3 rounded transition-all duration-300 ${
+              dataSource.sjr.loaded ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-600'
+            }`}>
+              <span className="flex items-center gap-2">
+                {dataSource.sjr.loaded ? (
+                  <CheckCircle className="h-4 w-4" />
+                ) : (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent"></div>
+                )}
+                SJR Database
+              </span>
+              <span className="font-medium">
+                {dataSource.sjr.loaded ? `${dataSource.sjr.count} journals ✓` : 'Carregando...'}
+              </span>
+            </div>
+            
+            <div className={`flex justify-between items-center p-3 rounded transition-all duration-300 ${
+              dataSource.citeScore.loaded ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-600'
+            }`}>
+              <span className="flex items-center gap-2">
+                {dataSource.citeScore.loaded ? (
+                  <CheckCircle className="h-4 w-4" />
+                ) : (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent"></div>
+                )}
+                CiteScore Database
+              </span>
+              <span className="font-medium">
+                {dataSource.citeScore.loaded ? `${dataSource.citeScore.count} journals ✓` : 'Carregando...'}
+              </span>
+            </div>
+            
+            <div className={`flex justify-between items-center p-3 rounded transition-all duration-300 ${
               dataSource.wiley.loaded ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-600'
             }`}>
               <span className="flex items-center gap-2">
@@ -93,6 +145,22 @@ const LoadingScreen = ({
               </span>
               <span className="font-medium">
                 {dataSource.wiley.loaded ? `${dataSource.wiley.count} journals ✓` : 'Carregando...'}
+              </span>
+            </div>
+            
+            <div className={`flex justify-between items-center p-3 rounded transition-all duration-300 ${
+              dataSource.predatory.loaded ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-600'
+            }`}>
+              <span className="flex items-center gap-2">
+                {dataSource.predatory.loaded ? (
+                  <CheckCircle className="h-4 w-4" />
+                ) : (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent"></div>
+                )}
+                Predatory Journals
+              </span>
+              <span className="font-medium">
+                {dataSource.predatory.loaded ? `${dataSource.predatory.count} journals ✓` : 'Carregando...'}
               </span>
             </div>
           </div>

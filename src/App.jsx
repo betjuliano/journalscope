@@ -19,9 +19,13 @@ function App() {
       <LoadingScreen 
         processingStatus={"Carregando dados embarcados..."}
         dataSource={{
-          abdc: { count: stats.withABDC, loaded: !!stats.withABDC },
-          abs: { count: stats.withABS, loaded: !!stats.withABS },
-          wiley: { count: stats.withWiley, loaded: !!stats.withWiley }
+          abdc: { count: stats.withABDC || 0, loaded: !!stats.withABDC },
+          abs: { count: stats.withABS || 0, loaded: !!stats.withABS },
+          jcr: { count: stats.withJCR || 0, loaded: !!stats.withJCR },
+          sjr: { count: stats.withSJR || 0, loaded: !!stats.withSJR },
+          citeScore: { count: stats.withCiteScore || 0, loaded: !!stats.withCiteScore },
+          wiley: { count: stats.withWiley || 0, loaded: !!stats.withWiley },
+          predatory: { count: stats.withPredatory || 0, loaded: !!stats.withPredatory }
         }}
       />
     );

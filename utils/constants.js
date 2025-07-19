@@ -18,7 +18,11 @@ export const FILE_CONFIG = {
   files: {
     ABDC: 'ABDC2022.xlsx',
     ABS: 'ABS2024.xlsx',
-    WILEY: 'Wiley.xlsx'
+    WILEY: 'Wiley.xlsx',
+    SJR: 'SJR.xlsx',
+    JCR: 'JCR.xlsx',
+    CITESCORE: 'CiteScore.xlsx',
+    PREDATORY: 'Predatory.xlsx'
   },
   
   // Caminhos possíveis para os arquivos
@@ -34,7 +38,11 @@ export const FILE_CONFIG = {
   sheets: {
     ABDC: '2022 JQL',
     ABS: 'Sheet1',
-    WILEY: 'Hybrid OA Journals Updated'
+    WILEY: 'Hybrid OA Journals Updated',
+    SJR: 'Sheet1',
+    JCR: 'Sheet1',
+    CITESCORE: 'Sheet1',
+    PREDATORY: 'Sheet1'
   },
   
   // Colunas dos dados
@@ -65,6 +73,36 @@ export const FILE_CONFIG = {
       APC_USD: 4,
       APC_GBP: 5,
       APC_EUR: 6
+    },
+    SJR: {
+      JOURNAL_TITLE: 0,
+      SJR_SCORE: 1,
+      QUARTILE: 2,
+      H_INDEX: 3,
+      CITABLE_DOCS: 4,
+      YEAR: 5
+    },
+    JCR: {
+      JOURNAL_TITLE: 0,
+      IMPACT_FACTOR: 1,
+      QUARTILE: 2,
+      CATEGORY: 3,
+      CITATIONS: 4,
+      YEAR: 5
+    },
+    CITESCORE: {
+      JOURNAL_TITLE: 0,
+      CITESCORE: 1,
+      PERCENTILE: 2,
+      CITATIONS: 3,
+      YEAR: 4
+    },
+    PREDATORY: {
+      JOURNAL_TITLE: 0,
+      IS_PREDATORY: 1,
+      SOURCE: 2,
+      REASON: 3,
+      LAST_CHECKED: 4
     }
   }
 };
@@ -129,6 +167,33 @@ export const CLASSIFICATIONS = {
       color: '#6b7280', // gray-500
       priority: 1
     }
+  },
+  
+  SJR: {
+    'Q1': {
+      label: 'Q1',
+      description: 'Primeiro Quartil',
+      color: '#059669', // green-600
+      priority: 4
+    },
+    'Q2': {
+      label: 'Q2',
+      description: 'Segundo Quartil',
+      color: '#2563eb', // blue-600
+      priority: 3
+    },
+    'Q3': {
+      label: 'Q3',
+      description: 'Terceiro Quartil',
+      color: '#d97706', // amber-600
+      priority: 2
+    },
+    'Q4': {
+      label: 'Q4',
+      description: 'Quarto Quartil',
+      color: '#6b7280', // gray-500
+      priority: 1
+    }
   }
 };
 
@@ -137,10 +202,11 @@ export const FILTER_PRESETS = {
   'clear': {
     name: 'Limpar Filtros',
     description: 'Remove todos os filtros aplicados',
-    icon: 'RotateCcw',
+    icon: '🔄',
     filters: {
-      abdc: '',
-      abs: '',
+      abdc: [],
+      abs: [],
+      sjr: [],
       wiley: false,
       search: ''
     }
@@ -148,67 +214,98 @@ export const FILTER_PRESETS = {
   
   'top-tier': {
     name: 'Top Tier',
-    description: 'Journals de elite (A* + 4*)',
-    icon: 'Crown',
+    description: 'A* + 4*',
+    icon: '👑',
     filters: {
-      abdc: 'A*',
-      abs: '4*',
+      abdc: ['A*'],
+      abs: ['4*'],
+      sjr: [],
       wiley: false
     }
   },
   
   'high-quality': {
     name: 'Alta Qualidade',
-    description: 'Journals de alta qualidade (A + 4)',
-    icon: 'Star',
+    description: 'A + 4',
+    icon: '⭐',
     filters: {
-      abdc: 'A',
-      abs: '4',
+      abdc: ['A'],
+      abs: ['4'],
+      sjr: [],
+      wiley: false
+    }
+  },
+  
+  'high-impact-jcr': {
+    name: 'Alto Impacto JCR',
+    description: '>10',
+    icon: '📈',
+    filters: {
+      abdc: [],
+      abs: [],
+      sjr: [],
+      wiley: false,
+      jcrImpactMin: 10
+    }
+  },
+  
+  'qualis-mb': {
+    name: 'Qualis MB',
+    description: 'ABS 2+, ABDC A/A*, SJR Q1',
+    icon: '🏅',
+    filters: {
+      abdc: ['A*', 'A'],
+      abs: ['4*', '4', '3', '2'],
+      sjr: ['Q1'],
+      wiley: false
+    }
+  },
+  
+  'qualis-b': {
+    name: 'Qualis B',
+    description: 'ABDC B, ABS 1, SJR Q2',
+    icon: '🥉',
+    filters: {
+      abdc: ['B'],
+      abs: ['1'],
+      sjr: ['Q2'],
+      wiley: false
+    }
+  },
+  
+  'sjr-q1-q2': {
+    name: 'SJR',
+    description: 'Q1+Q2',
+    icon: '📊',
+    filters: {
+      abdc: [],
+      abs: [],
+      sjr: ['Q1', 'Q2'],
+      wiley: false
+    }
+  },
+  
+  'sjr-quartiles': {
+    name: 'Quartis SJR',
+    description: 'Q1 e Q2',
+    icon: '🎯',
+    filters: {
+      abdc: [],
+      abs: [],
+      sjr: ['Q1', 'Q2'],
       wiley: false
     }
   },
   
   'wiley-only': {
     name: 'Apenas Wiley',
-    description: 'Somente journals da Wiley',
-    icon: 'BookOpen',
+    description: 'Todos da Wiley',
+    icon: '📚',
     filters: {
-      abdc: '',
-      abs: '',
+      abdc: [],
+      abs: [],
+      sjr: [],
       wiley: true
-    }
-  },
-  
-  'abdc-a-star': {
-    name: 'ABDC A*',
-    description: 'Journals classificados como A* pela ABDC',
-    icon: 'Award',
-    filters: {
-      abdc: 'A*',
-      abs: '',
-      wiley: false
-    }
-  },
-  
-  'abs-four-star': {
-    name: 'ABS 4*',
-    description: 'Journals classificados como 4* pela ABS',
-    icon: 'Trophy',
-    filters: {
-      abdc: '',
-      abs: '4*',
-      wiley: false
-    }
-  },
-  
-  'good-quality': {
-    name: 'Boa Qualidade',
-    description: 'Journals de boa qualidade (B + 3)',
-    icon: 'ThumbsUp',
-    filters: {
-      abdc: 'B',
-      abs: '3',
-      wiley: false
     }
   }
 };
@@ -224,10 +321,17 @@ export const EXPORT_CONFIG = {
       'Journal',
       'Classificação ABDC',
       'Classificação ABS',
+      'SJR Quartil',
+      'SJR Score',
+      'H Index',
+      'Documentos Citáveis',
+      'JCR Impact Factor',
+      'JCR Quartil',
+      'CiteScore',
+      'CiteScore Percentil',
+      'Predatório',
       'Área Wiley',
-      'APC Wiley (USD)',
-      'APC Wiley (GBP)',
-      'APC Wiley (EUR)'
+      'APC Wiley (USD)'
     ]
   },
   
@@ -238,7 +342,7 @@ export const EXPORT_CONFIG = {
   
   excel: {
     sheetName: 'Journals',
-    creator: 'JournalScope',
+    creator: 'JournalScope V3.0',
     created: new Date()
   }
 };

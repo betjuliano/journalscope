@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { FILE_CONFIG } from '../utils/constants';
+import { unifyAllDataSources, generateUnifiedStats, validateUnifiedData } from '../utils/dataMerger';
 
 /**
  * Hook para processar arquivos Excel e unificar dados de journals
@@ -12,7 +13,11 @@ const useDataProcessor = () => {
   const [dataSource, setDataSource] = useState({
     abdc: { count: 0, loaded: false },
     abs: { count: 0, loaded: false },
-    wiley: { count: 0, loaded: false }
+    wiley: { count: 0, loaded: false },
+    sjr: { count: 0, loaded: false },
+    jcr: { count: 0, loaded: false },
+    citeScore: { count: 0, loaded: false },
+    predatory: { count: 0, loaded: false }
   });
 
   /**
@@ -210,6 +215,262 @@ const useDataProcessor = () => {
   }, [readFileFromPaths]);
 
   /**
+   * Processa dados SJR (Scimago Journal Rank)
+   */
+  const processSJRData = useCallback(async () => {
+    try {
+      setProcessingStatus('Carregando dados SJR...');
+      
+      const XLSX = await import('xlsx');
+      
+      // Buscar arquivo nos caminhos configurados
+      const sjrFile = await readFileFromPaths(FILE_CONFIG.files.SJR);
+      
+      const sjrWorkbook = XLSX.read(sjrFile);
+      
+      // Verificar se a sheet existe
+      if (!sjrWorkbook.Sheets[FILE_CONFIG.sheets.SJR]) {
+        throw new Error(`Sheet "${FILE_CONFIG.sheets.SJR}" não encontrada no arquivo SJR`);
+      }
+      
+      const sjrSheet = sjrWorkbook.Sheets[FILE_CONFIG.sheets.SJR];
+      const sjrRawData = XLSX.utils.sheet_to_json(sjrSheet, { header: 1 });
+      
+      // Verificar se há dados suficientes
+      if (sjrRawData.length < 2) {
+        throw new Error('Dados insuficientes no arquivo SJR');
+      }
+      
+      // Os dados SJR começam na linha 1 (linha 0 é cabeçalho)
+      const sjrDataRows = sjrRawData
+        .slice(1)
+        .filter(row => row && row[FILE_CONFIG.columns.SJR.JOURNAL_TITLE]);
+      
+      const sjrJournals = {};
+      sjrDataRows.forEach(row => {
+        const journalTitle = row[FILE_CONFIG.columns.SJR.JOURNAL_TITLE]?.toString().trim();
+        const sjrScore = parseFloat(row[FILE_CONFIG.columns.SJR.SJR_SCORE]) || 0;
+        const quartile = row[FILE_CONFIG.columns.SJR.QUARTILE]?.toString().trim();
+        const hIndex = parseInt(row[FILE_CONFIG.columns.SJR.H_INDEX]) || 0;
+        const citableDocs = parseInt(row[FILE_CONFIG.columns.SJR.CITABLE_DOCS]) || 0;
+        const year = parseInt(row[FILE_CONFIG.columns.SJR.YEAR]) || new Date().getFullYear();
+        
+        if (journalTitle && quartile && ['Q1', 'Q2', 'Q3', 'Q4'].includes(quartile)) {
+          sjrJournals[journalTitle.toLowerCase()] = {
+            quartile,
+            score: sjrScore,
+            hIndex,
+            citableDocs,
+            year
+          };
+        }
+      });
+      
+      setDataSource(prev => ({
+        ...prev,
+        sjr: { count: Object.keys(sjrJournals).length, loaded: true }
+      }));
+      
+      console.log(`✅ SJR processado: ${Object.keys(sjrJournals).length} journals`);
+      return sjrJournals;
+    } catch (error) {
+      console.error('Erro ao processar SJR:', error);
+      throw new Error(`Erro ao carregar dados SJR: ${error.message}`);
+    }
+  }, [readFileFromPaths]);
+
+  /**
+   * Processa dados JCR (Journal Citation Reports)
+   */
+  const processJCRData = useCallback(async () => {
+    try {
+      setProcessingStatus('Carregando dados JCR...');
+      
+      const XLSX = await import('xlsx');
+      
+      // Buscar arquivo nos caminhos configurados
+      const jcrFile = await readFileFromPaths(FILE_CONFIG.files.JCR);
+      
+      const jcrWorkbook = XLSX.read(jcrFile);
+      
+      // Verificar se a sheet existe
+      if (!jcrWorkbook.Sheets[FILE_CONFIG.sheets.JCR]) {
+        throw new Error(`Sheet "${FILE_CONFIG.sheets.JCR}" não encontrada no arquivo JCR`);
+      }
+      
+      const jcrSheet = jcrWorkbook.Sheets[FILE_CONFIG.sheets.JCR];
+      const jcrRawData = XLSX.utils.sheet_to_json(jcrSheet, { header: 1 });
+      
+      // Verificar se há dados suficientes
+      if (jcrRawData.length < 2) {
+        throw new Error('Dados insuficientes no arquivo JCR');
+      }
+      
+      // Os dados JCR começam na linha 1 (linha 0 é cabeçalho)
+      const jcrDataRows = jcrRawData
+        .slice(1)
+        .filter(row => row && row[FILE_CONFIG.columns.JCR.JOURNAL_TITLE]);
+      
+      const jcrJournals = {};
+      jcrDataRows.forEach(row => {
+        const journalTitle = row[FILE_CONFIG.columns.JCR.JOURNAL_TITLE]?.toString().trim();
+        const impactFactor = parseFloat(row[FILE_CONFIG.columns.JCR.IMPACT_FACTOR]) || 0;
+        const quartile = row[FILE_CONFIG.columns.JCR.QUARTILE]?.toString().trim();
+        const category = row[FILE_CONFIG.columns.JCR.CATEGORY]?.toString().trim();
+        const citations = parseInt(row[FILE_CONFIG.columns.JCR.CITATIONS]) || 0;
+        const year = parseInt(row[FILE_CONFIG.columns.JCR.YEAR]) || new Date().getFullYear();
+        
+        if (journalTitle && impactFactor >= 0) {
+          jcrJournals[journalTitle.toLowerCase()] = {
+            impactFactor,
+            quartile: quartile || '',
+            category: category || '',
+            citations,
+            year
+          };
+        }
+      });
+      
+      setDataSource(prev => ({
+        ...prev,
+        jcr: { count: Object.keys(jcrJournals).length, loaded: true }
+      }));
+      
+      console.log(`✅ JCR processado: ${Object.keys(jcrJournals).length} journals`);
+      return jcrJournals;
+    } catch (error) {
+      console.error('Erro ao processar JCR:', error);
+      throw new Error(`Erro ao carregar dados JCR: ${error.message}`);
+    }
+  }, [readFileFromPaths]);
+
+  /**
+   * Processa dados CiteScore
+   */
+  const processCiteScoreData = useCallback(async () => {
+    try {
+      setProcessingStatus('Carregando dados CiteScore...');
+      
+      const XLSX = await import('xlsx');
+      
+      // Buscar arquivo nos caminhos configurados
+      const citeScoreFile = await readFileFromPaths(FILE_CONFIG.files.CITESCORE);
+      
+      const citeScoreWorkbook = XLSX.read(citeScoreFile);
+      
+      // Verificar se a sheet existe
+      if (!citeScoreWorkbook.Sheets[FILE_CONFIG.sheets.CITESCORE]) {
+        throw new Error(`Sheet "${FILE_CONFIG.sheets.CITESCORE}" não encontrada no arquivo CiteScore`);
+      }
+      
+      const citeScoreSheet = citeScoreWorkbook.Sheets[FILE_CONFIG.sheets.CITESCORE];
+      const citeScoreRawData = XLSX.utils.sheet_to_json(citeScoreSheet, { header: 1 });
+      
+      // Verificar se há dados suficientes
+      if (citeScoreRawData.length < 2) {
+        throw new Error('Dados insuficientes no arquivo CiteScore');
+      }
+      
+      // Os dados CiteScore começam na linha 1 (linha 0 é cabeçalho)
+      const citeScoreDataRows = citeScoreRawData
+        .slice(1)
+        .filter(row => row && row[FILE_CONFIG.columns.CITESCORE.JOURNAL_TITLE]);
+      
+      const citeScoreJournals = {};
+      citeScoreDataRows.forEach(row => {
+        const journalTitle = row[FILE_CONFIG.columns.CITESCORE.JOURNAL_TITLE]?.toString().trim();
+        const score = parseFloat(row[FILE_CONFIG.columns.CITESCORE.CITESCORE]) || 0;
+        const percentile = parseFloat(row[FILE_CONFIG.columns.CITESCORE.PERCENTILE]) || 0;
+        const citations = parseInt(row[FILE_CONFIG.columns.CITESCORE.CITATIONS]) || 0;
+        const year = parseInt(row[FILE_CONFIG.columns.CITESCORE.YEAR]) || new Date().getFullYear();
+        
+        if (journalTitle && score >= 0 && percentile >= 0 && percentile <= 100) {
+          citeScoreJournals[journalTitle.toLowerCase()] = {
+            score,
+            percentile,
+            citations,
+            year
+          };
+        }
+      });
+      
+      setDataSource(prev => ({
+        ...prev,
+        citeScore: { count: Object.keys(citeScoreJournals).length, loaded: true }
+      }));
+      
+      console.log(`✅ CiteScore processado: ${Object.keys(citeScoreJournals).length} journals`);
+      return citeScoreJournals;
+    } catch (error) {
+      console.error('Erro ao processar CiteScore:', error);
+      throw new Error(`Erro ao carregar dados CiteScore: ${error.message}`);
+    }
+  }, [readFileFromPaths]);
+
+  /**
+   * Processa dados de Journals Predatórios
+   */
+  const processPredatoryData = useCallback(async () => {
+    try {
+      setProcessingStatus('Carregando dados de Journals Predatórios...');
+      
+      const XLSX = await import('xlsx');
+      
+      // Buscar arquivo nos caminhos configurados
+      const predatoryFile = await readFileFromPaths(FILE_CONFIG.files.PREDATORY);
+      
+      const predatoryWorkbook = XLSX.read(predatoryFile);
+      
+      // Verificar se a sheet existe
+      if (!predatoryWorkbook.Sheets[FILE_CONFIG.sheets.PREDATORY]) {
+        throw new Error(`Sheet "${FILE_CONFIG.sheets.PREDATORY}" não encontrada no arquivo Predatory`);
+      }
+      
+      const predatorySheet = predatoryWorkbook.Sheets[FILE_CONFIG.sheets.PREDATORY];
+      const predatoryRawData = XLSX.utils.sheet_to_json(predatorySheet, { header: 1 });
+      
+      // Verificar se há dados suficientes
+      if (predatoryRawData.length < 2) {
+        throw new Error('Dados insuficientes no arquivo Predatory');
+      }
+      
+      // Os dados Predatory começam na linha 1 (linha 0 é cabeçalho)
+      const predatoryDataRows = predatoryRawData
+        .slice(1)
+        .filter(row => row && row[FILE_CONFIG.columns.PREDATORY.JOURNAL_TITLE]);
+      
+      const predatoryJournals = {};
+      predatoryDataRows.forEach(row => {
+        const journalTitle = row[FILE_CONFIG.columns.PREDATORY.JOURNAL_TITLE]?.toString().trim();
+        const isPredatory = Boolean(row[FILE_CONFIG.columns.PREDATORY.IS_PREDATORY]);
+        const source = row[FILE_CONFIG.columns.PREDATORY.SOURCE]?.toString().trim();
+        const reason = row[FILE_CONFIG.columns.PREDATORY.REASON]?.toString().trim();
+        const lastChecked = row[FILE_CONFIG.columns.PREDATORY.LAST_CHECKED]?.toString().trim();
+        
+        if (journalTitle) {
+          predatoryJournals[journalTitle.toLowerCase()] = {
+            isPredatory,
+            source: source || 'Unknown',
+            reason: reason || '',
+            lastChecked: lastChecked || new Date().toISOString().split('T')[0]
+          };
+        }
+      });
+      
+      setDataSource(prev => ({
+        ...prev,
+        predatory: { count: Object.keys(predatoryJournals).length, loaded: true }
+      }));
+      
+      console.log(`✅ Predatory processado: ${Object.keys(predatoryJournals).length} journals`);
+      return predatoryJournals;
+    } catch (error) {
+      console.error('Erro ao processar Predatory:', error);
+      throw new Error(`Erro ao carregar dados Predatory: ${error.message}`);
+    }
+  }, [readFileFromPaths]);
+
+  /**
    * Função utilitária para capitalizar nomes de journals
    */
   const capitalizeJournalName = useCallback((journalKey) => {
@@ -231,7 +492,11 @@ const useDataProcessor = () => {
       setDataSource({
         abdc: { count: 0, loaded: false },
         abs: { count: 0, loaded: false },
-        wiley: { count: 0, loaded: false }
+        wiley: { count: 0, loaded: false },
+        sjr: { count: 0, loaded: false },
+        jcr: { count: 0, loaded: false },
+        citeScore: { count: 0, loaded: false },
+        predatory: { count: 0, loaded: false }
       });
       
       // Verificar cache primeiro (mais rápido)
@@ -251,11 +516,19 @@ const useDataProcessor = () => {
           const withABDC = parsedData.filter(j => j.abdc).length;
           const withABS = parsedData.filter(j => j.abs).length;
           const withWiley = parsedData.filter(j => j.wileySubject).length;
+          const withSJR = parsedData.filter(j => j.sjr).length;
+          const withJCR = parsedData.filter(j => j.jcr).length;
+          const withCiteScore = parsedData.filter(j => j.citeScore).length;
+          const withPredatory = parsedData.filter(j => j.predatory).length;
           
           setDataSource({
             abdc: { count: withABDC, loaded: true },
             abs: { count: withABS, loaded: true },
-            wiley: { count: withWiley, loaded: true }
+            wiley: { count: withWiley, loaded: true },
+            sjr: { count: withSJR, loaded: true },
+            jcr: { count: withJCR, loaded: true },
+            citeScore: { count: withCiteScore, loaded: true },
+            predatory: { count: withPredatory, loaded: true }
           });
           
           setProcessingStatus(`Cache carregado! ${parsedData.length} journals disponíveis.`);
@@ -271,7 +544,11 @@ const useDataProcessor = () => {
       const processors = [
         { name: 'abdc', fn: processABDCData },
         { name: 'abs', fn: processABSData },
-        { name: 'wiley', fn: processWileyData }
+        { name: 'wiley', fn: processWileyData },
+        { name: 'sjr', fn: processSJRData },
+        { name: 'jcr', fn: processJCRData },
+        { name: 'citeScore', fn: processCiteScoreData },
+        { name: 'predatory', fn: processPredatoryData }
       ];
       
       // Processar em paralelo com updates progressivos
@@ -288,41 +565,10 @@ const useDataProcessor = () => {
       
       setProcessingStatus('Unificando dados...');
       
-      // Usar setTimeout para não bloquear a UI durante unificação
+      // Usar sistema de merge inteligente
       const unifiedData = await new Promise((resolve) => {
         setTimeout(() => {
-          // Criar conjunto único de journals
-          const allJournalNames = new Set([
-            ...Object.keys(results.abdc || {}),
-            ...Object.keys(results.abs || {}),
-            ...Object.keys(results.wiley || {})
-          ]);
-          
-          // Criar tabela unificada em lotes para não bloquear UI
-          const unified = [];
-          const batchSize = 100;
-          const journalArray = Array.from(allJournalNames);
-          
-          for (let i = 0; i < journalArray.length; i += batchSize) {
-            const batch = journalArray.slice(i, i + batchSize);
-            
-            batch.forEach(journalKey => {
-              const abdcRating = results.abdc[journalKey] || "";
-              const absRating = results.abs[journalKey] || "";
-              const wileyInfo = results.wiley[journalKey] || {};
-              
-              unified.push({
-                journal: capitalizeJournalName(journalKey),
-                abdc: abdcRating,
-                abs: absRating,
-                wileySubject: wileyInfo.subjectArea || "",
-                wileyAPC: wileyInfo.apcUsd || ""
-              });
-            });
-          }
-          
-          // Ordenar por nome
-          unified.sort((a, b) => a.journal.localeCompare(b.journal));
+          const unified = unifyAllDataSources(results);
           resolve(unified);
         }, 0);
       });
@@ -370,7 +616,11 @@ const useDataProcessor = () => {
     const files = [
       FILE_CONFIG.files.ABDC,
       FILE_CONFIG.files.ABS,
-      FILE_CONFIG.files.WILEY
+      FILE_CONFIG.files.WILEY,
+      FILE_CONFIG.files.SJR,
+      FILE_CONFIG.files.JCR,
+      FILE_CONFIG.files.CITESCORE,
+      FILE_CONFIG.files.PREDATORY
     ];
     
     const fileStatus = {};
@@ -411,6 +661,10 @@ const useDataProcessor = () => {
     processABDCData,
     processABSData,
     processWileyData,
+    processSJRData,
+    processJCRData,
+    processCiteScoreData,
+    processPredatoryData,
     capitalizeJournalName
   };
 };
