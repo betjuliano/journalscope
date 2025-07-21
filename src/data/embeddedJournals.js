@@ -140306,10 +140306,12 @@ export const EMBEDDED_JOURNALS_DATA = {
     {
       "journal": "Rege-revista De Gestao",
       "abdc": "",
-      "abs": "",
+      "abs": "1",
       "wileySubject": "",
       "wileyAPC": "",
-      "sjr": null,
+      "sjr": {
+        "hIndex":20
+      },
       "jcr": {
         "impactFactor": 2.1,
         "quartile": "Q3",
