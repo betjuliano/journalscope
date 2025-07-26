@@ -12,9 +12,14 @@ import {
 import { useEmbeddedData } from '../../hooks';
 import { exportAsCSV, exportAsExcel } from '../../utils';
 import PerformanceMonitor from './PerformanceMonitor';
-import ResultsTable from './ResultsTable';
+import SimpleResultsTable from './SimpleResultsTable';
+import LanguageToggle from './LanguageToggle';
+import { useI18n } from '../contexts/I18nContext';
 
 const JournalSearchApp = () => {
+  // I18n context
+  const { t, language } = useI18n();
+  
   // Estados originais do hook
   const {
     filteredData,
@@ -57,8 +62,8 @@ const JournalSearchApp = () => {
 
   // Salvar busca no histórico
   const saveSearchHistory = (term) => {
-    if (term.trim() && !searchHistory.includes(term)) {
-      const newHistory = [term, ...searchHistory.slice(0, 9)];
+    if (term.trim() && searchHistory && !searchHistory.includes(term)) {
+      const newHistory = [term, ...(searchHistory || []).slice(0, 9)];
       setSearchHistory(newHistory);
       localStorage.setItem('journalSearchHistory', JSON.stringify(newHistory));
     }
@@ -67,14 +72,14 @@ const JournalSearchApp = () => {
   // Exportação com Excel
   const handleExportExcel = async (data) => {
     try {
-      await exportAsExcel(data || filteredData, null, { includeStats: true });
+      await exportAsExcel(data || filteredData || [], null, { includeStats: true });
     } catch (error) {
       alert(`Erro na exportação: ${error.message}`);
     }
   };
 
   const handleExportCSV = (data) => {
-    exportToCSV(data || filteredData);
+    exportToCSV(data || filteredData || []);
   };
 
   const handlePresetFilter = (preset) => {
@@ -93,7 +98,12 @@ const JournalSearchApp = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
         {/* Hero Section */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 relative">
+          {/* Language Toggle - positioned in top-right */}
+          <div className="absolute top-0 right-0">
+            <LanguageToggle position="hero" />
+          </div>
+          
           <div className="flex items-center justify-center gap-3 mb-6">
             <Database className="h-10 w-10 text-indigo-600" />
             <h1 className="text-5xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
@@ -102,11 +112,10 @@ const JournalSearchApp = () => {
           </div>
           <div className="max-w-3xl mx-auto mb-6">
             <p className="text-xl text-gray-700 mb-3 font-medium">
-              Sistema Integrado de Consulta de Journals Acadêmicos
+              {t('hero.subtitle')}
             </p>
             <p className="text-gray-600 leading-relaxed">
-              Plataforma unificada para consulta e análise de journals acadêmicos com dados consolidados 
-              de múltiplas bases de classificação internacional, incluindo ABDC, ABS, JCR, SJR, CiteScore e Wiley.
+              {t('hero.description')}
             </p>
           </div>
           
@@ -114,31 +123,31 @@ const JournalSearchApp = () => {
           <div className="grid grid-cols-2 md:grid-cols-7 gap-4 max-w-5xl mx-auto mb-6">
             <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-sm border border-white/20">
               <div className="text-2xl font-bold text-indigo-600">{stats.total}</div>
-              <div className="text-xs text-gray-600 font-medium">Total Journals</div>
+              <div className="text-xs text-gray-600 font-medium">{t('stats.totalJournals')}</div>
             </div>
             <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-sm border border-white/20">
               <div className="text-2xl font-bold text-blue-600">{stats.withABDC}</div>
-              <div className="text-xs text-gray-600 font-medium">ABDC</div>
+              <div className="text-xs text-gray-600 font-medium">{t('stats.withABDC')}</div>
             </div>
             <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-sm border border-white/20">
               <div className="text-2xl font-bold text-green-600">{stats.withABS}</div>
-              <div className="text-xs text-gray-600 font-medium">ABS</div>
+              <div className="text-xs text-gray-600 font-medium">{t('stats.withABS')}</div>
             </div>
             <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-sm border border-white/20">
               <div className="text-2xl font-bold text-purple-600">{stats.withJCR}</div>
-              <div className="text-xs text-gray-600 font-medium">JCR</div>
+              <div className="text-xs text-gray-600 font-medium">{t('stats.withJCR')}</div>
             </div>
             <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-sm border border-white/20">
               <div className="text-2xl font-bold text-orange-600">{stats.withSJR}</div>
-              <div className="text-xs text-gray-600 font-medium">SJR</div>
+              <div className="text-xs text-gray-600 font-medium">{t('stats.withSJR')}</div>
             </div>
             <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-sm border border-white/20">
               <div className="text-2xl font-bold text-red-600">{stats.withCiteScore}</div>
-              <div className="text-xs text-gray-600 font-medium">CiteScore</div>
+              <div className="text-xs text-gray-600 font-medium">{t('stats.withCiteScore')}</div>
             </div>
             <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-sm border border-white/20">
               <div className="text-2xl font-bold text-red-800">{stats.withPredatory}</div>
-              <div className="text-xs text-gray-600 font-medium">Predatórios</div>
+              <div className="text-xs text-gray-600 font-medium">{t('stats.withPredatory')}</div>
             </div>
           </div>
         </div>
@@ -150,31 +159,31 @@ const JournalSearchApp = () => {
               onClick={() => handlePresetFilter('top-tier')}
               className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-sm"
             >
-              🏆 Top Tier (A* + 4*)
+              {t('filters.quickFilters.topTier')}
             </button>
             <button
               onClick={() => handlePresetFilter('high-quality')}
               className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm"
             >
-              ⭐ Alta Qualidade (A + 4)
+              {t('filters.quickFilters.highQuality')}
             </button>
             <button
               onClick={() => handlePresetFilter('qualis-mb')}
               className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors text-sm"
             >
-              🥇 Qualis MB
+              {t('filters.quickFilters.qualisMB')}
             </button>
             <button
               onClick={() => handlePresetFilter('qualis-b')}
               className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm"
             >
-              🥈 Qualis B
+              {t('filters.quickFilters.qualisB')}
             </button>
             <button
               onClick={() => handlePresetFilter('wiley-only')}
               className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-md hover:bg-orange-200 transition-colors text-sm"
             >
-              📚 Apenas Wiley
+              {t('filters.quickFilters.wileyOnly')}
             </button>
             <button
               onClick={() => setExcludePredatory(!excludePredatory)}
@@ -184,7 +193,7 @@ const JournalSearchApp = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              🚫 Excluir Predatórios
+              {t('filters.quickFilters.excludePredatory')}
             </button>
             <button
               onClick={() => {
@@ -193,7 +202,7 @@ const JournalSearchApp = () => {
               }}
               className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm"
             >
-              🔄 Limpar Filtros
+              {t('filters.quickFilters.clearFilters')}
             </button>
           </div>
         </div>
@@ -204,13 +213,13 @@ const JournalSearchApp = () => {
             {/* Campo de Busca com Histórico */}
             <div className="lg:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Buscar Journal
+                {t('filters.search.label')}
               </label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Digite o nome do journal..."
+                  placeholder={t('filters.search.placeholder')}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   value={searchTerm}
                   onChange={(e) => handleSearchTermChange(e.target.value)}
@@ -226,10 +235,10 @@ const JournalSearchApp = () => {
                 )}
                 
                 {/* Histórico de Busca */}
-                {showSearchHistory && searchHistory.length > 0 && (
+                {showSearchHistory && searchHistory && searchHistory.length > 0 && (
                   <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
                     <div className="p-2 border-b border-gray-100 text-xs text-gray-500 font-medium">
-                      HISTÓRICO DE BUSCAS
+                      {t('filters.search.history')}
                     </div>
                     {searchHistory.map((term, index) => (
                       <button
@@ -249,14 +258,14 @@ const JournalSearchApp = () => {
             {/* Filtro ABDC */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Classificação ABDC
+                {t('labels.abdcClassification')}
               </label>
               <select
                 className="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 value={filterABDC}
                 onChange={(e) => setFilterABDC(e.target.value)}
               >
-                <option value="">Todas</option>
+                <option value="">{t('labels.all')}</option>
                 <option value="A*">A*</option>
                 <option value="A">A</option>
                 <option value="B">B</option>
@@ -267,14 +276,14 @@ const JournalSearchApp = () => {
             {/* Filtro ABS */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Classificação ABS
+                {t('labels.absClassification')}
               </label>
               <select
                 className="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 value={filterABS}
                 onChange={(e) => setFilterABS(e.target.value)}
               >
-                <option value="">Todas</option>
+                <option value="">{t('labels.all')}</option>
                 <option value="4*">4*</option>
                 <option value="4">4</option>
                 <option value="3">3</option>
@@ -286,14 +295,14 @@ const JournalSearchApp = () => {
             {/* Filtro SJR Quartil */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                SJR Quartil
+                {t('labels.sjrQuartile')}
               </label>
               <select
                 className="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 value={filterSJR}
                 onChange={(e) => setFilterSJR(e.target.value)}
               >
-                <option value="">Todos</option>
+                <option value="">{t('labels.allQuartiles')}</option>
                 <option value="Q1">Q1</option>
                 <option value="Q2">Q2</option>
                 <option value="Q3">Q3</option>
@@ -310,7 +319,7 @@ const JournalSearchApp = () => {
                   checked={filterWiley}
                   onChange={(e) => setFilterWiley(e.target.checked)}
                 />
-                <span className="text-sm">Apenas Wiley</span>
+                <span className="text-sm">{t('labels.wileyOnly')}</span>
               </label>
               
               <div className="flex gap-2 mt-2">
@@ -319,7 +328,7 @@ const JournalSearchApp = () => {
                   className="flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm"
                 >
                   <BarChart3 className="h-3 w-3" />
-                  Stats
+                  {t('filters.stats.label')}
                 </button>
               </div>
             </div>
@@ -331,51 +340,51 @@ const JournalSearchApp = () => {
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
             <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
-              Estatísticas Detalhadas do Banco de Dados
+              {t('statsPanel.title')}
             </h3>
             
             {/* Estatísticas Gerais */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-8">
               <div className="text-center p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg border border-indigo-200">
                 <div className="text-2xl font-bold text-indigo-600">{stats.total}</div>
-                <div className="text-xs text-indigo-700 font-medium">Total Journals</div>
+                <div className="text-xs text-indigo-700 font-medium">{t('statsPanel.general.total')}</div>
               </div>
               <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
                 <div className="text-2xl font-bold text-blue-600">{stats.withABDC}</div>
-                <div className="text-xs text-blue-700 font-medium">Com ABDC</div>
+                <div className="text-xs text-blue-700 font-medium">{t('statsPanel.general.withABDC')}</div>
               </div>
               <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
                 <div className="text-2xl font-bold text-green-600">{stats.withABS}</div>
-                <div className="text-xs text-green-700 font-medium">Com ABS</div>
+                <div className="text-xs text-green-700 font-medium">{t('statsPanel.general.withABS')}</div>
               </div>
               <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
                 <div className="text-2xl font-bold text-purple-600">{stats.withJCR}</div>
-                <div className="text-xs text-purple-700 font-medium">Com JCR</div>
+                <div className="text-xs text-purple-700 font-medium">{t('statsPanel.general.withJCR')}</div>
               </div>
               <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg border border-orange-200">
                 <div className="text-2xl font-bold text-orange-600">{stats.withSJR}</div>
-                <div className="text-xs text-orange-700 font-medium">Com SJR</div>
+                <div className="text-xs text-orange-700 font-medium">{t('statsPanel.general.withSJR')}</div>
               </div>
               <div className="text-center p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg border border-red-200">
                 <div className="text-2xl font-bold text-red-600">{stats.withCiteScore}</div>
-                <div className="text-xs text-red-700 font-medium">Com CiteScore</div>
+                <div className="text-xs text-red-700 font-medium">{t('statsPanel.general.withCiteScore')}</div>
               </div>
               <div className="text-center p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg border border-yellow-200">
                 <div className="text-2xl font-bold text-yellow-600">{stats.withWiley}</div>
-                <div className="text-xs text-yellow-700 font-medium">Com Wiley</div>
+                <div className="text-xs text-yellow-700 font-medium">{t('stats.withWiley')}</div>
               </div>
               <div className="text-center p-4 bg-gradient-to-br from-red-100 to-red-200 rounded-lg border border-red-300">
                 <div className="text-2xl font-bold text-red-800">{stats.withPredatory}</div>
-                <div className="text-xs text-red-800 font-medium">Predatórios</div>
+                <div className="text-xs text-red-800 font-medium">{t('statsPanel.general.withPredatory')}</div>
               </div>
             </div>
             
-            {/* Distribuições por Classificação */}
+            {/* Distributions by Classification */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Distribuição ABDC */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <h4 className="font-semibold mb-3 text-gray-800 flex items-center gap-2">
-                  📊 Distribuição ABDC
+                  {t('statsPanel.distributions.abdc')}
                 </h4>
                 <div className="space-y-2">
                   {Object.entries(stats.abdcDistribution || {}).map(([rating, count]) => (
@@ -399,7 +408,7 @@ const JournalSearchApp = () => {
               {/* Distribuição ABS */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <h4 className="font-semibold mb-3 text-gray-800 flex items-center gap-2">
-                  📈 Distribuição ABS
+                  {t('statsPanel.distributions.abs')}
                 </h4>
                 <div className="space-y-2">
                   {Object.entries(stats.absDistribution || {}).map(([rating, count]) => (
@@ -424,7 +433,7 @@ const JournalSearchApp = () => {
               {/* Distribuição SJR */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <h4 className="font-semibold mb-3 text-gray-800 flex items-center gap-2">
-                  🎯 Distribuição SJR
+                  {t('statsPanel.distributions.sjr')}
                 </h4>
                 <div className="space-y-2">
                   {Object.entries(stats.sjrDistribution || {}).map(([rating, count]) => (
@@ -449,7 +458,7 @@ const JournalSearchApp = () => {
               {/* Qualidade dos Journals */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <h4 className="font-semibold mb-3 text-gray-800 flex items-center gap-2">
-                  ⭐ Qualidade dos Journals
+                  {t('statsPanel.distributions.quality')}
                 </h4>
                 <div className="space-y-2 mb-4">
                   {Object.entries(stats.dataQualityDistribution || {}).map(([quality, count]) => (
@@ -460,7 +469,7 @@ const JournalSearchApp = () => {
                           quality === 'medium' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-red-100 text-red-800'
                         }`}>
-                          {quality === 'high' ? 'Alta' : quality === 'medium' ? 'Média' : 'Baixa'}
+                          {quality === 'high' ? t('statsPanel.quality.high') : quality === 'medium' ? t('statsPanel.quality.medium') : t('statsPanel.quality.low')}
                         </span>
                       </span>
                       <span className="font-medium text-gray-700">{count}</span>
@@ -470,23 +479,23 @@ const JournalSearchApp = () => {
                 
                 {/* Explicação da Qualidade */}
                 <div className="border-t border-gray-200 pt-3">
-                  <h5 className="text-xs font-medium text-gray-700 mb-2">Como é calculada:</h5>
+                  <h5 className="text-xs font-medium text-gray-700 mb-2">{t('statsPanel.quality.explanation')}</h5>
                   <div className="space-y-1 text-xs text-gray-600">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                      <span><strong>Alta:</strong> 3+ fontes de dados</span>
+                      <span><strong>{t('statsPanel.quality.high')}:</strong> {t('statsPanel.quality.highDesc')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-                      <span><strong>Média:</strong> 2 fontes de dados</span>
+                      <span><strong>{t('statsPanel.quality.medium')}:</strong> {t('statsPanel.quality.mediumDesc')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                      <span><strong>Baixa:</strong> 1 fonte de dados</span>
+                      <span><strong>{t('statsPanel.quality.low')}:</strong> {t('statsPanel.quality.lowDesc')}</span>
                     </div>
                   </div>
                   <p className="text-xs text-gray-500 mt-2 italic">
-                    Fontes: ABDC, ABS, JCR, SJR, CiteScore, Wiley, Predatory
+                    {t('statsPanel.quality.sources')}
                   </p>
                 </div>
               </div>
@@ -494,7 +503,7 @@ const JournalSearchApp = () => {
               {/* Cobertura por Base */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <h4 className="font-semibold mb-3 text-gray-800 flex items-center gap-2">
-                  📋 Cobertura por Base
+                  {t('statsPanel.distributions.coverage')}
                 </h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
@@ -527,7 +536,7 @@ const JournalSearchApp = () => {
               {/* Resumo Qualis */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <h4 className="font-semibold mb-3 text-gray-800 flex items-center gap-2">
-                  🏆 Resumo Qualis
+                  {t('statsPanel.distributions.qualis')}
                 </h4>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm">
@@ -537,7 +546,7 @@ const JournalSearchApp = () => {
                       </span>
                     </span>
                     <span className="font-medium text-gray-700">
-                      {filteredData.filter(j => j.qualis === 'MB' || (j.abdc === 'A*' || j.abdc === 'A' || (j.abs && ['2', '3', '4', '4*'].includes(j.abs)) || j.jcr?.quartile === 'Q1' || j.sjr?.quartile === 'Q1')).length}
+                      {filteredData ? filteredData.filter(j => j.qualis === 'MB' || (j.abdc === 'A*' || j.abdc === 'A' || (j.abs && ['2', '3', '4', '4*'].includes(j.abs)) || j.jcr?.quartile === 'Q1' || j.sjr?.quartile === 'Q1')).length : 0}
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
@@ -547,7 +556,7 @@ const JournalSearchApp = () => {
                       </span>
                     </span>
                     <span className="font-medium text-gray-700">
-                      {filteredData.filter(j => j.abdc === 'B' || j.abs === '1' || j.jcr?.quartile === 'Q2' || j.sjr?.quartile === 'Q2').length}
+                      {filteredData ? filteredData.filter(j => j.abdc === 'B' || j.abs === '1' || j.jcr?.quartile === 'Q2' || j.sjr?.quartile === 'Q2').length : 0}
                     </span>
                   </div>
                 </div>
@@ -556,11 +565,12 @@ const JournalSearchApp = () => {
           </div>
         )}
 
-        {/* Resultados com novo componente */}
-        <ResultsTable 
-          data={excludePredatory ? filteredData.filter(journal => !journal.predatory?.isPredatory) : filteredData}
+        {/* Resultados com tabela simples e funcional */}
+        <SimpleResultsTable 
+          data={excludePredatory ? (filteredData || []).filter(journal => !journal.predatory?.isPredatory) : (filteredData || [])}
           searchTerm={searchTerm}
-          maxDisplayed={100}
+          onExportCSV={handleExportCSV}
+          onExportExcel={handleExportExcel}
         />
       </div>
 
@@ -610,7 +620,7 @@ const JournalSearchApp = () => {
               {/* Center - Developer Info */}
               <div className="text-center">
                 <p className="text-sm text-gray-600 mb-2">
-                  Desenvolvido por{' '}
+                  {t('footer.developedBy')}{' '}
                   <a 
                     href="https://www.linkedin.com/in/juliano-alves-66657b17/" 
                     target="_blank" 
@@ -659,13 +669,13 @@ const JournalSearchApp = () => {
             {/* Data Sources Information */}
             <div className="bg-gray-50 rounded-lg p-6">
               <h3 className="text-sm font-semibold text-gray-800 mb-4 text-center">
-                Fontes de Dados e Atualizações
+                {t('dataSources.title')}
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-600">
                 <div className="space-y-2">
                   <div>
-                    <strong className="text-gray-800">JCR - Categorias Selecionadas:</strong>
+                    <strong className="text-gray-800">{t('dataSources.jcr')} - {t('categories.selectedCategories')}</strong>
                     <div className="mt-1 leading-relaxed">
                       Management, Business, Finance, Economics, Public Administration, 
                       Industrial Relations & Labor, Humanities, Multidisciplinary, 
@@ -676,29 +686,29 @@ const JournalSearchApp = () => {
                   </div>
                   
                   <div>
-                    <strong className="text-gray-800">SJR - 2024:</strong> Atualizado em 07/2025
+                    <strong className="text-gray-800">{t('dataSources.sjr')}:</strong> {t('dataSources.updatedOn')} 07/2025
                   </div>
                   
                   <div>
-                    <strong className="text-gray-800">ABDC:</strong> Atualização 2022 - 2025 previsto Outubro 2025
+                    <strong className="text-gray-800">ABDC:</strong> {t('dataSources.abdc')}
                   </div>
                 </div>
                 
                 <div className="space-y-2">
                   <div>
-                    <strong className="text-gray-800">CiteScore - Scopus:</strong> 2024
+                    <strong className="text-gray-800">{t('dataSources.citeScore')}:</strong> 2024
                   </div>
                   
                   <div>
-                    <strong className="text-gray-800">Wiley:</strong> Termo convênio Capes 2025
+                    <strong className="text-gray-800">Wiley:</strong> {t('dataSources.wiley')}
                   </div>
                   
                   <div>
-                    <strong className="text-gray-800">ABS - 2024:</strong> Atualizado em 07/2025
+                    <strong className="text-gray-800">{t('dataSources.abs')}:</strong> {t('dataSources.updatedOn')} 07/2025
                   </div>
                   
                   <div>
-                    <strong className="text-gray-800">Predatório:</strong> The Predatory Journals List 
+                    <strong className="text-gray-800">{t('footer.predatory')}:</strong> The Predatory Journals List 
                     (<a 
                       href="https://www.predatoryjournals.org/the-list/journals" 
                       target="_blank" 

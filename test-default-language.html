@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Idioma Padrão - JournalScope</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .clear-btn {
+            background-color: #dc3545;
+        }
+        .clear-btn:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Teste de Idioma Padrão - JournalScope</h1>
+        <p>Este teste verifica se o idioma padrão está configurado corretamente como <strong>Português</strong>.</p>
+        
+        <div id="results"></div>
+        
+        <div style="margin-top: 20px;">
+            <button onclick="runTest()">🔄 Executar Teste</button>
+            <button onclick="clearStorage()" class="clear-btn">🗑️ Limpar localStorage</button>
+            <button onclick="setEnglish()">🇺🇸 Definir Inglês</button>
+            <button onclick="setPortuguese()">🇧🇷 Definir Português</button>
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <h3>📋 Instruções:</h3>
+            <ol>
+                <li><strong>Limpe o localStorage</strong> clicando no botão vermelho</li>
+                <li><strong>Execute o teste</strong> para verificar o idioma padrão</li>
+                <li><strong>Resultado esperado:</strong> Português (pt) deve ser o padrão</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const LANGUAGE_STORAGE_KEY = 'journalscope_language';
+        const DEFAULT_LANGUAGE = 'pt';
+        
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = message;
+            resultsDiv.appendChild(resultDiv);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        function runTest() {
+            clearResults();
+            
+            addResult('🔍 Iniciando teste de idioma padrão...', 'info');
+            
+            // Verificar se localStorage está disponível
+            if (typeof Storage === 'undefined') {
+                addResult('❌ localStorage não está disponível', 'error');
+                return;
+            }
+            
+            // Verificar valor atual no localStorage
+            const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+            
+            if (savedLanguage) {
+                addResult(`📝 Idioma salvo encontrado: <strong>${savedLanguage}</strong>`, 'info');
+                
+                if (savedLanguage === 'pt') {
+                    addResult('✅ Idioma salvo está correto (Português)', 'success');
+                } else if (savedLanguage === 'en') {
+                    addResult('⚠️ Idioma salvo está em Inglês - deveria ser Português por padrão', 'error');
+                } else {
+                    addResult(`❌ Idioma salvo inválido: ${savedLanguage}`, 'error');
+                }
+            } else {
+                addResult('📝 Nenhum idioma salvo encontrado (primeira visita)', 'info');
+                addResult('✅ Comportamento esperado: deveria usar Português como padrão', 'success');
+            }
+            
+            // Simular lógica do I18nContext
+            const effectiveLanguage = savedLanguage && ['pt', 'en'].includes(savedLanguage) 
+                ? savedLanguage 
+                : DEFAULT_LANGUAGE;
+                
+            addResult(`🎯 Idioma efetivo que seria usado: <strong>${effectiveLanguage}</strong>`, 
+                effectiveLanguage === 'pt' ? 'success' : 'error');
+            
+            // Verificar se o padrão está correto
+            if (effectiveLanguage === 'pt') {
+                addResult('🎉 TESTE PASSOU: Português é o idioma padrão!', 'success');
+            } else {
+                addResult('❌ TESTE FALHOU: Idioma padrão não é Português', 'error');
+            }
+        }
+        
+        function clearStorage() {
+            localStorage.removeItem(LANGUAGE_STORAGE_KEY);
+            addResult('🗑️ localStorage limpo com sucesso', 'info');
+            setTimeout(runTest, 500);
+        }
+        
+        function setEnglish() {
+            localStorage.setItem(LANGUAGE_STORAGE_KEY, 'en');
+            addResult('🇺🇸 Idioma definido para Inglês', 'info');
+            setTimeout(runTest, 500);
+        }
+        
+        function setPortuguese() {
+            localStorage.setItem(LANGUAGE_STORAGE_KEY, 'pt');
+            addResult('🇧🇷 Idioma definido para Português', 'info');
+            setTimeout(runTest, 500);
+        }
+        
+        // Executar teste automaticamente ao carregar
+        window.onload = function() {
+            runTest();
+        };
+    </script>
+</body>
+</html>

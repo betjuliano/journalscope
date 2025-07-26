@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 
 /**
- * Hook otimizado para dados embarcados
- * Carregamento instantâneo sem processamento de Excel
+ * Hook simplificado para dados embarcados
+ * Versão estável focada em funcionalidade básica
  */
 const useEmbeddedData = () => {
   const [journalsData, setJournalsData] = useState([]);
@@ -13,6 +13,10 @@ const useEmbeddedData = () => {
     withABDC: 0,
     withABS: 0,
     withWiley: 0,
+    withSJR: 0,
+    withJCR: 0,
+    withCiteScore: 0,
+    withPredatory: 0,
     abdcDistribution: {},
     absDistribution: {}
   });
@@ -26,132 +30,148 @@ const useEmbeddedData = () => {
   const [showStats, setShowStats] = useState(false);
 
   /**
-   * Carrega dados embarcados de forma síncrona e instantânea
+   * Carrega dados embarcados de forma lazy para otimizar bundle inicial
    */
   useEffect(() => {
-    const loadEmbeddedData = () => {
+    const loadEmbeddedData = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        // Importação síncrona dos dados embarcados para máxima performance
-        import('../src/data/embeddedJournals.js')
-          .then(({ EMBEDDED_JOURNALS_DATA }) => {
-            if (EMBEDDED_JOURNALS_DATA && EMBEDDED_JOURNALS_DATA.data) {
-              console.log('⚡ Dados embarcados carregados instantaneamente');
-              console.log(`📊 Total de journals: ${EMBEDDED_JOURNALS_DATA.data.length}`);
-              console.log(`📅 Gerado em: ${EMBEDDED_JOURNALS_DATA.generatedAt}`);
-              
-              setJournalsData(EMBEDDED_JOURNALS_DATA.data);
-              setStats(EMBEDDED_JOURNALS_DATA.stats || {
-                total: EMBEDDED_JOURNALS_DATA.data.length,
-                withABDC: EMBEDDED_JOURNALS_DATA.data.filter(j => j.abdc).length,
-                withABS: EMBEDDED_JOURNALS_DATA.data.filter(j => j.abs).length,
-                withWiley: EMBEDDED_JOURNALS_DATA.data.filter(j => j.wileySubject).length,
-                withSJR: EMBEDDED_JOURNALS_DATA.data.filter(j => j.sjr).length,
-                withJCR: EMBEDDED_JOURNALS_DATA.data.filter(j => j.jcr).length,
-                withCiteScore: EMBEDDED_JOURNALS_DATA.data.filter(j => j.citeScore).length,
-                withPredatory: EMBEDDED_JOURNALS_DATA.data.filter(j => j.predatory).length,
-                abdcDistribution: {},
-                absDistribution: {}
-              });
-              
-              setIsLoading(false);
-            } else {
-              throw new Error('Dados embarcados não encontrados ou formato inválido');
-            }
-          })
-          .catch((importError) => {
-            console.error('Erro ao carregar dados embarcados:', importError);
-            setError('Dados embarcados não encontrados. Os dados estáticos não foram gerados corretamente.');
-            setIsLoading(false);
+        // Dynamic import para carregar dados apenas quando necessário
+        const { EMBEDDED_JOURNALS_DATA } = await import('../src/data/embeddedJournals.js');
+        
+        if (EMBEDDED_JOURNALS_DATA && EMBEDDED_JOURNALS_DATA.data) {
+          console.log('⚡ Dados embarcados carregados instantaneamente');
+          console.log(`📊 Total de journals: ${EMBEDDED_JOURNALS_DATA.data.length}`);
+          console.log(`📅 Gerado em: ${EMBEDDED_JOURNALS_DATA.generatedAt}`);
+          
+          setJournalsData(EMBEDDED_JOURNALS_DATA.data);
+          setStats(EMBEDDED_JOURNALS_DATA.stats || {
+            total: EMBEDDED_JOURNALS_DATA.data.length,
+            withABDC: EMBEDDED_JOURNALS_DATA.data.filter(j => j.abdc).length,
+            withABS: EMBEDDED_JOURNALS_DATA.data.filter(j => j.abs).length,
+            withWiley: EMBEDDED_JOURNALS_DATA.data.filter(j => j.wileySubject).length,
+            withSJR: EMBEDDED_JOURNALS_DATA.data.filter(j => j.sjr).length,
+            withJCR: EMBEDDED_JOURNALS_DATA.data.filter(j => j.jcr).length,
+            withCiteScore: EMBEDDED_JOURNALS_DATA.data.filter(j => j.citeScore).length,
+            withPredatory: EMBEDDED_JOURNALS_DATA.data.filter(j => j.predatory).length,
+            abdcDistribution: {},
+            absDistribution: {}
           });
-
+          
+          setIsLoading(false);
+        } else {
+          throw new Error('Dados embarcados não encontrados');
+        }
       } catch (err) {
-        console.error('Erro crítico ao carregar dados:', err);
-        setError('Erro crítico no carregamento dos dados embarcados.');
+        console.error('Erro ao carregar dados embarcados:', err);
+        setError(err.message);
         setIsLoading(false);
       }
     };
 
-    // Carregamento imediato sem delay
     loadEmbeddedData();
   }, []);
 
   /**
-   * Dados filtrados baseado nos critérios de busca
+   * Termo de busca processado
+   */
+  const processedSearchTerm = useMemo(() => {
+    return searchTerm ? searchTerm.toLowerCase().trim() : '';
+  }, [searchTerm]);
+
+  /**
+   * Dados filtrados com otimização simples
    */
   const filteredData = useMemo(() => {
-    if (!journalsData.length) return [];
+    if (!journalsData || journalsData.length === 0) return [];
 
-    return journalsData.filter(journal => {
-      // Filtro de busca por nome
-      const matchesSearch = !searchTerm || 
-        journal.journal.toLowerCase().includes(searchTerm.toLowerCase());
+    const startTime = performance.now();
+    
+    const filtered = journalsData.filter(journal => {
+      // Filtro de busca
+      if (processedSearchTerm && !journal.journal.toLowerCase().includes(processedSearchTerm)) {
+        return false;
+      }
       
-      // Filtro ABDC
-      const matchesABDC = !filterABDC || journal.abdc === filterABDC;
+      // Filtros específicos
+      if (filterABDC && journal.abdc !== filterABDC) return false;
+      if (filterABS && journal.abs !== filterABS) return false;
+      if (filterSJR && journal.sjr?.quartile !== filterSJR) return false;
+      if (filterWiley && !journal.wileySubject) return false;
       
-      // Filtro ABS
-      const matchesABS = !filterABS || journal.abs === filterABS;
-      
-      // Filtro SJR
-      const matchesSJR = !filterSJR || journal.sjr?.quartile === filterSJR;
-      
-      // Filtro Wiley (apenas journals com dados Wiley)
-      const matchesWiley = !filterWiley || journal.wileySubject !== '';
-      
-      return matchesSearch && matchesABDC && matchesABS && matchesSJR && matchesWiley;
+      return true;
     });
-  }, [journalsData, searchTerm, filterABDC, filterABS, filterSJR, filterWiley]);
+
+    const filterTime = performance.now() - startTime;
+    
+    if (import.meta.env.DEV) {
+      console.log(`🔍 Filtro aplicado em ${filterTime.toFixed(2)}ms para ${journalsData.length} journals`);
+      console.log(`📊 Resultados: ${filtered.length}/${journalsData.length} (${((filtered.length / journalsData.length) * 100).toFixed(1)}%)`);
+    }
+
+    return filtered;
+  }, [journalsData, processedSearchTerm, filterABDC, filterABS, filterSJR, filterWiley]);
 
   /**
    * Estatísticas dos dados filtrados
    */
   const filteredStats = useMemo(() => {
-    if (!filteredData.length) {
+    if (!filteredData || filteredData.length === 0) {
       return {
         total: 0,
         withABDC: 0,
         withABS: 0,
         withWiley: 0,
+        withSJR: 0,
+        withJCR: 0,
+        withCiteScore: 0,
+        withPredatory: 0,
         abdcDistribution: {},
         absDistribution: {}
       };
     }
 
-    const total = filteredData.length;
-    const withABDC = filteredData.filter(j => j.abdc).length;
-    const withABS = filteredData.filter(j => j.abs).length;
-    const withWiley = filteredData.filter(j => j.wileySubject).length;
+    const stats = {
+      total: filteredData.length,
+      withABDC: 0,
+      withABS: 0,
+      withWiley: 0,
+      withSJR: 0,
+      withJCR: 0,
+      withCiteScore: 0,
+      withPredatory: 0,
+      abdcDistribution: {},
+      absDistribution: {}
+    };
     
-    const abdcDistribution = {};
-    const absDistribution = {};
-    
-    filteredData.forEach(j => {
-      if (j.abdc) {
-        abdcDistribution[j.abdc] = (abdcDistribution[j.abdc] || 0) + 1;
+    filteredData.forEach(journal => {
+      if (journal.abdc) stats.withABDC++;
+      if (journal.abs) stats.withABS++;
+      if (journal.wileySubject) stats.withWiley++;
+      if (journal.sjr) stats.withSJR++;
+      if (journal.jcr) stats.withJCR++;
+      if (journal.citeScore) stats.withCiteScore++;
+      if (journal.predatory) stats.withPredatory++;
+      
+      // Distribuições
+      if (journal.abdc) {
+        stats.abdcDistribution[journal.abdc] = (stats.abdcDistribution[journal.abdc] || 0) + 1;
       }
-      if (j.abs) {
-        absDistribution[j.abs] = (absDistribution[j.abs] || 0) + 1;
+      if (journal.abs) {
+        stats.absDistribution[journal.abs] = (stats.absDistribution[journal.abs] || 0) + 1;
       }
     });
     
-    return {
-      total,
-      withABDC,
-      withABS,
-      withWiley,
-      abdcDistribution,
-      absDistribution
-    };
+    return stats;
   }, [filteredData]);
 
   /**
    * Busca journal específico por nome exato
    */
   const findJournalByName = useCallback((journalName) => {
-    if (!journalName || !journalsData.length) return null;
+    if (!journalName || !journalsData || journalsData.length === 0) return null;
     
     const normalizedName = journalName.toLowerCase().trim();
     return journalsData.find(journal => 
@@ -163,7 +183,7 @@ const useEmbeddedData = () => {
    * Busca journals similares
    */
   const findSimilarJournals = useCallback((journalName, limit = 5) => {
-    if (!journalName || !journalsData.length) return [];
+    if (!journalName || !journalsData || journalsData.length === 0) return [];
     
     const normalizedName = journalName.toLowerCase().trim();
     const words = normalizedName.split(' ');
@@ -184,7 +204,7 @@ const useEmbeddedData = () => {
   const exportToCSV = useCallback((customData = null, filename = 'journal_classifications') => {
     const dataToExport = customData || filteredData;
     
-    if (!dataToExport.length) {
+    if (!dataToExport || dataToExport.length === 0) {
       throw new Error('Nenhum dado para exportar');
     }
 
@@ -202,7 +222,7 @@ const useEmbeddedData = () => {
         `"${row.journal.replace(/"/g, '""')}"`,
         `"${row.abdc || 'N/A'}"`,
         `"${row.abs || 'N/A'}"`,
-        `"${row.wileySubject.replace(/"/g, '""') || 'N/A'}"`,
+        `"${row.wileySubject?.replace(/"/g, '""') || 'N/A'}"`,
         `"${row.wileyAPC || 'N/A'}"`
       ].join(','))
     ].join('\n');
@@ -237,7 +257,12 @@ const useEmbeddedData = () => {
    * Aplica filtros predefinidos
    */
   const applyPresetFilter = useCallback((preset) => {
-    clearAllFilters();
+    // Limpar filtros primeiro
+    setSearchTerm('');
+    setFilterABDC('');
+    setFilterABS('');
+    setFilterWiley(false);
+    setFilterSJR('');
     
     switch (preset) {
       case 'top-tier':
@@ -249,13 +274,9 @@ const useEmbeddedData = () => {
         setFilterABS('4');
         break;
       case 'qualis-mb':
-        // Filtrar por critérios que geram Qualis MB
-        // Pode ser A*/A na ABDC, ou 2+ no ABS, ou Q1 no SJR
         setFilterABDC('A*');
         break;
       case 'qualis-b':
-        // Filtrar por critérios que geram Qualis B
-        // Pode ser B na ABDC, ou 1 no ABS, ou Q2 no SJR
         setFilterABDC('B');
         break;
       case 'wiley-only':
@@ -270,10 +291,10 @@ const useEmbeddedData = () => {
       default:
         break;
     }
-  }, [clearAllFilters]);
+  }, []);
 
   /**
-   * Recarrega dados (regenera dados embarcados)
+   * Recarrega dados
    */
   const reloadData = useCallback(async () => {
     try {
@@ -287,44 +308,30 @@ const useEmbeddedData = () => {
 
   return {
     // Estados dos dados
-    journalsData,
-    filteredData,
+    journalsData: journalsData || [],
+    filteredData: filteredData || [],
     isLoading,
     error,
-    processingStatus: isLoading ? 'Carregando dados embarcados...' : 'Dados carregados ⚡',
-    dataSource: {
-      abdc: { count: stats.withABDC, loaded: !isLoading },
-      abs: { count: stats.withABS, loaded: !isLoading },
-      wiley: { count: stats.withWiley, loaded: !isLoading }
-    },
-    
-    // Estados dos filtros
-    searchTerm,
-    filterABDC,
-    filterABS,
-    filterWiley,
-    filterSJR,
-    
-    // Estados da UI
-    showStats,
-    
-    // Estatísticas
     stats,
     filteredStats,
     
-    // Setters dos filtros
+    // Estados dos filtros
+    searchTerm,
     setSearchTerm,
+    filterABDC,
     setFilterABDC,
+    filterABS,
     setFilterABS,
+    filterWiley,
     setFilterWiley,
+    filterSJR,
     setFilterSJR,
+    showStats,
     setShowStats,
     
     // Funções de busca
     findJournalByName,
     findSimilarJournals,
-    
-    // Funções de exportação
     exportToCSV,
     
     // Funções de filtros
@@ -336,9 +343,9 @@ const useEmbeddedData = () => {
     
     // Utilitários
     hasFiltersApplied: !!(searchTerm || filterABDC || filterABS || filterWiley),
-    isEmpty: journalsData.length === 0,
-    hasResults: filteredData.length > 0,
-    isEmbedded: true // Indica que está usando dados embarcados
+    isEmpty: !journalsData || journalsData.length === 0,
+    hasResults: filteredData && filteredData.length > 0,
+    isEmbedded: true
   };
 };
 

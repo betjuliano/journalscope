@@ -1,13 +1,36 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import { Search, ChevronUp, ChevronDown, Download, ExternalLink, Settings, Eye, EyeOff } from 'lucide-react';
+import { 
+  truncateJournalName, 
+  needsTruncation, 
+  validateJournalData, 
+  getSafeJournalNameForRendering,
+  createJournalCellFallback,
+  sanitizeJournalName
+} from '../../utils';
+import { useI18n } from '../contexts/I18nContext';
+
+// Memoized constants to avoid recreation
+const PERFORMANCE_THRESHOLDS = {
+  FILTER_TIME_WARNING: 10,
+  STATS_TIME_WARNING: 5,
+  RENDER_TIME_WARNING: 20
+};
 
 const ResultsTable = ({
   data = [],
   onExportCSV,
   onExportExcel,
   searchTerm = '',
-  maxDisplayed = 100
+  maxDisplayed = 100,
+  // Additional props for filter tracking
+  filterABDC = '',
+  filterABS = '',
+  filterWiley = false,
+  filterSJR = ''
 }) => {
+  // I18n context for dynamic column management
+  const { t, language } = useI18n();
   const [sortField, setSortField] = useState('journal');
   const [sortDirection, setSortDirection] = useState('asc');
   const [selectedJournals, setSelectedJournals] = useState(new Set());
@@ -15,30 +38,44 @@ const ResultsTable = ({
   const [isMobile, setIsMobile] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(100);
+  
+  // Remove expansion state management as we're implementing auto-expanding
 
-  // Definição das colunas obrigatórias e opcionais
-  const MANDATORY_COLUMNS = {
-    journal: { label: 'Journal', field: 'journal', sortable: true },
-    abdc: { label: 'ABDC', field: 'abdc', sortable: true },
-    abs: { label: 'ABS', field: 'abs', sortable: true },
-    sjrQuartile: { label: 'SJR Quartile', field: 'sjr.quartile', sortable: true },
-    jcrQuartile: { label: 'JCR Quartile', field: 'jcr.quartile', sortable: true },
-    qualis: { label: 'Qualis', field: 'qualis', sortable: true }
-  };
+  // Dynamic column configuration based on language
+  const getColumnConfiguration = useMemo(() => {
+    const baseColumns = {
+      journal: { label: t('table.columns.journal'), field: 'journal', sortable: true },
+      abdc: { label: t('table.columns.abdc'), field: 'abdc', sortable: true },
+      abs: { label: t('table.columns.abs'), field: 'abs', sortable: true },
+      sjrQuartile: { label: t('table.columns.sjrQuartile'), field: 'sjr.quartile', sortable: true },
+      jcrQuartile: { label: t('table.columns.jcrQuartile'), field: 'jcr.quartile', sortable: true }
+    };
 
-  const MOBILE_MANDATORY_COLUMNS = {
-    journal: MANDATORY_COLUMNS.journal,
-    abdc: MANDATORY_COLUMNS.abdc,
-    abs: MANDATORY_COLUMNS.abs,
-    sjrQuartile: MANDATORY_COLUMNS.sjrQuartile,
-    jcrQuartile: MANDATORY_COLUMNS.jcrQuartile,
-    qualis: MANDATORY_COLUMNS.qualis
-  };
+    // Language-specific columns
+    if (language === 'en') {
+      // English: Hide Qualis, show SJR H-Index
+      return {
+        ...baseColumns,
+        sjrHIndex: { label: t('table.columns.sjrHIndex'), field: 'sjr.hIndex', sortable: true }
+      };
+    } else {
+      // Portuguese: Show Qualis, hide SJR H-Index
+      return {
+        ...baseColumns,
+        qualis: { label: t('table.columns.qualis'), field: 'qualis', sortable: true }
+      };
+    }
+  }, [language, t]);
 
-  const OPTIONAL_COLUMNS = {
-    predatory: { label: 'Predatório', field: 'predatory.isPredatory', sortable: true },
+  // Mandatory columns for desktop and mobile
+  const MANDATORY_COLUMNS = getColumnConfiguration;
+  const MOBILE_MANDATORY_COLUMNS = getColumnConfiguration;
+
+  // Optional columns with translations
+  const OPTIONAL_COLUMNS = useMemo(() => ({
+    predatory: { label: language === 'en' ? 'Predatory' : 'Predatório', field: 'predatory.isPredatory', sortable: true },
     sjrScore: { label: 'SJR Score', field: 'sjr.score', sortable: true },
-    sjrHIndex: { label: 'SJR H-Index', field: 'sjr.hIndex', sortable: true },
+    // Note: sjrHIndex is now handled in mandatory columns for English
     sjrCitableDocs: { label: 'SJR Citable Docs', field: 'sjr.citableDocs', sortable: true },
     jcrImpactFactor: { label: 'JCR Impact Factor', field: 'jcr.impactFactor', sortable: true },
     jcrCategory: { label: 'JCR Category', field: 'jcr.category', sortable: true },
@@ -46,8 +83,8 @@ const ResultsTable = ({
     citeScoreScore: { label: 'CiteScore Score', field: 'citeScore.score', sortable: true },
     citeScoreSnip: { label: 'CiteScore SNIP', field: 'citeScore.snip', sortable: true },
     issn: { label: 'ISSN', field: 'jcr.issn', sortable: false },
-    wileySubject: { label: 'Área Wiley', field: 'wileySubject', sortable: true }
-  };
+    wileySubject: { label: language === 'en' ? 'Wiley Subject' : 'Área Wiley', field: 'wileySubject', sortable: true }
+  }), [language]);
 
   // Estado das colunas opcionais (carregado do localStorage)
   const [optionalColumns, setOptionalColumns] = useState(() => {
@@ -74,6 +111,14 @@ const ResultsTable = ({
   useEffect(() => {
     localStorage.setItem('journalTable_optionalColumns', JSON.stringify(optionalColumns));
   }, [optionalColumns]);
+
+  // Auto-expanding doesn't need reset logic
+
+  // Resetar expansões durante mudança de página
+  // Comentado para preservar estado durante paginação na mesma página
+  // useEffect(() => {
+  //   setExpandedJournals(new Set());
+  // }, [currentPage]);
 
   // Função para calcular Qualis
   const calculateQualis = (journal) => {
@@ -119,40 +164,99 @@ const ResultsTable = ({
     return '-';
   };
 
-  // Processar dados com Qualis
+  // Memoized Qualis calculation function
+  const calculateQualisMemoized = useCallback((journal) => {
+    const abdc = journal.abdc;
+    const abs = journal.abs;
+    const jcrQuartile = journal.jcr?.quartile;
+    const sjrQuartile = journal.sjr?.quartile;
+
+    // MB: ABDC = A/A* OU ABS ≥ 2 OU JCR = Q1 OU SJR = Q1
+    if (
+      abdc === 'A' || abdc === 'A*' ||
+      (abs && (abs === '2' || abs === '3' || abs === '4' || abs === '4*')) ||
+      jcrQuartile === 'Q1' ||
+      sjrQuartile === 'Q1'
+    ) {
+      return 'MB';
+    }
+
+    // B: ABDC = B OU ABS = 1 OU JCR = Q2 OU SJR = Q2
+    if (
+      abdc === 'B' ||
+      abs === '1' ||
+      jcrQuartile === 'Q2' ||
+      sjrQuartile === 'Q2'
+    ) {
+      return 'B';
+    }
+
+    // R: ABDC = C OU JCR = Q3 OU SJR = Q3
+    if (
+      abdc === 'C' ||
+      jcrQuartile === 'Q3' ||
+      sjrQuartile === 'Q3'
+    ) {
+      return 'R';
+    }
+
+    // F: JCR = Q4 OU SJR = Q4
+    if (jcrQuartile === 'Q4' || sjrQuartile === 'Q4') {
+      return 'F';
+    }
+
+    return '-';
+  }, []);
+
+  // Processar dados com Qualis - optimized with performance monitoring
   const processedData = useMemo(() => {
-    return data.map(journal => ({
+    const startTime = performance.now();
+    
+    const processed = data.map(journal => ({
       ...journal,
-      qualis: calculateQualis(journal)
+      qualis: calculateQualisMemoized(journal)
     }));
-  }, [data]);
+
+    const processingTime = performance.now() - startTime;
+    if (import.meta.env.DEV && processingTime > PERFORMANCE_THRESHOLDS.RENDER_TIME_WARNING) {
+      console.log(`⚠️ Data processing took ${processingTime.toFixed(2)}ms for ${data.length} journals`);
+    }
+
+    return processed;
+  }, [data, calculateQualisMemoized]);
 
   // Função para obter valor aninhado
   const getNestedValue = (obj, path) => {
     return path.split('.').reduce((current, key) => current?.[key], obj);
   };
 
-  // Função para ordenar dados
+  // Memoized sort orders to avoid recreation
+  const sortOrders = useMemo(() => ({
+    abdc: { 'A*': 4, 'A': 3, 'B': 2, 'C': 1 },
+    abs: { '4*': 5, '4': 4, '3': 3, '2': 2, '1': 1 },
+    qualis: { 'MB': 4, 'B': 3, 'R': 2, 'F': 1 }
+  }), []);
+
+  // Optimized sorting function
   const sortedData = useMemo(() => {
     if (!processedData.length) return [];
 
-    return [...processedData].sort((a, b) => {
+    const startTime = performance.now();
+
+    const sorted = [...processedData].sort((a, b) => {
       let aValue = getNestedValue(a, sortField) || '';
       let bValue = getNestedValue(b, sortField) || '';
 
       // Ordenação especial para classificações
       if (sortField === 'abdc') {
-        const abdcOrder = { 'A*': 4, 'A': 3, 'B': 2, 'C': 1 };
-        aValue = abdcOrder[aValue] || 0;
-        bValue = abdcOrder[bValue] || 0;
+        aValue = sortOrders.abdc[aValue] || 0;
+        bValue = sortOrders.abdc[bValue] || 0;
       } else if (sortField === 'abs') {
-        const absOrder = { '4*': 5, '4': 4, '3': 3, '2': 2, '1': 1 };
-        aValue = absOrder[aValue] || 0;
-        bValue = absOrder[bValue] || 0;
+        aValue = sortOrders.abs[aValue] || 0;
+        bValue = sortOrders.abs[bValue] || 0;
       } else if (sortField === 'qualis') {
-        const qualisOrder = { 'MB': 4, 'B': 3, 'R': 2, 'F': 1 };
-        aValue = qualisOrder[aValue] || 0;
-        bValue = qualisOrder[bValue] || 0;
+        aValue = sortOrders.qualis[aValue] || 0;
+        bValue = sortOrders.qualis[bValue] || 0;
       } else if (sortField === 'wileyAPC' || sortField === 'citeScore.score' || sortField === 'sjr.hIndex' || sortField === 'jcr.impactFactor') {
         aValue = parseFloat(aValue) || 0;
         bValue = parseFloat(bValue) || 0;
@@ -164,43 +268,157 @@ const ResultsTable = ({
         bValue = bValue.toString().toLowerCase();
       }
 
-      if (sortDirection === 'asc') {
-        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
-      } else {
-        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
-      }
-    });
-  }, [processedData, sortField, sortDirection]);
+      const result = sortDirection === 'asc' 
+        ? (aValue > bValue ? 1 : aValue < bValue ? -1 : 0)
+        : (aValue < bValue ? 1 : aValue > bValue ? -1 : 0);
 
-  // Colunas visíveis baseadas no contexto (mobile/desktop)
+      return result;
+    });
+
+    const sortTime = performance.now() - startTime;
+    if (import.meta.env.DEV && sortTime > PERFORMANCE_THRESHOLDS.RENDER_TIME_WARNING) {
+      console.log(`⚠️ Sorting took ${sortTime.toFixed(2)}ms for ${processedData.length} journals`);
+    }
+
+    return sorted;
+  }, [processedData, sortField, sortDirection, sortOrders]);
+
+  // Colunas visíveis baseadas no contexto (mobile/desktop) e idioma
   const visibleColumns = useMemo(() => {
     const mandatoryColumns = isMobile ? MOBILE_MANDATORY_COLUMNS : MANDATORY_COLUMNS;
-    const enabledOptionalColumns = Object.keys(OPTIONAL_COLUMNS)
-      .filter(key => optionalColumns[key])
+    
+    // Filter optional columns to exclude sjrHIndex if it's already in mandatory (for English)
+    const filteredOptionalColumns = Object.keys(OPTIONAL_COLUMNS)
+      .filter(key => {
+        // Skip sjrHIndex in optional if it's already in mandatory columns (English mode)
+        if (key === 'sjrHIndex' && language === 'en') {
+          return false;
+        }
+        return optionalColumns[key];
+      })
       .reduce((acc, key) => ({ ...acc, [key]: OPTIONAL_COLUMNS[key] }), {});
 
-    return { ...mandatoryColumns, ...enabledOptionalColumns };
-  }, [isMobile, optionalColumns]);
+    return { ...mandatoryColumns, ...filteredOptionalColumns };
+  }, [isMobile, optionalColumns, MANDATORY_COLUMNS, MOBILE_MANDATORY_COLUMNS, OPTIONAL_COLUMNS, language]);
 
-  // Função para alternar coluna opcional
-  const toggleOptionalColumn = (columnKey) => {
+  // Função para alternar coluna opcional com useCallback para performance
+  const toggleOptionalColumn = useCallback((columnKey) => {
     setOptionalColumns(prev => ({
       ...prev,
       [columnKey]: !prev[columnKey]
     }));
-  };
+  }, []);
 
-  // Função para renderizar conteúdo da célula
-  const renderCellContent = (journal, columnKey, column, searchTerm) => {
-    const value = getNestedValue(journal, column.field);
 
-    switch (columnKey) {
-      case 'journal':
-        return (
-          <div className="max-w-xs font-medium text-gray-900">
-            {highlightSearchTerm(journal.journal, searchTerm)}
+
+  // Componente memoizado para célula de journal com auto-expansão
+  const JournalCell = memo(({ 
+    journal, 
+    index, 
+    searchTerm
+  }) => {
+    // Validar dados do journal antes do processamento
+    const validationResult = useMemo(() => {
+      return validateJournalData(journal);
+    }, [journal]);
+
+    // Memoizar cálculos de display para auto-expansão
+    const displayData = useMemo(() => {
+      try {
+        // Usar função segura para obter nome do journal
+        const journalName = getSafeJournalNameForRendering(journal);
+        const needsAutoExpand = journalName.length > 40; // 40 characters as per requirements
+        
+        return {
+          journalName,
+          needsAutoExpand,
+          isValid: true
+        };
+      } catch (error) {
+        console.error(`[ResultsTable] Erro ao processar dados de display para journal ${index}:`, error);
+        
+        // Fallback para dados de display
+        const safeName = getSafeJournalNameForRendering(journal, 'Erro no nome');
+        return {
+          journalName: safeName,
+          needsAutoExpand: false,
+          isValid: false,
+          error: error.message
+        };
+      }
+    }, [journal, index]);
+
+    // Memoizar texto destacado para evitar re-processamento
+    const highlightedText = useMemo(() => {
+      return highlightSearchTerm(displayData.journalName, searchTerm);
+    }, [displayData.journalName, searchTerm]);
+
+    // Se houve erro no processamento, usar fallback
+    if (!displayData.isValid) {
+      return (
+        <div className="journal-cell-container">
+          <div className="journal-cell-fallback" data-testid={`journal-cell-fallback-${index}`}>
+            <span className="text-gray-900">{displayData.journalName}</span>
+            <span 
+              className="text-xs text-red-500 ml-2" 
+              title={`Modo de fallback ativo: ${displayData.error || 'Erro desconhecido'}`}
+            >
+              ⚠
+            </span>
           </div>
-        );
+        </div>
+      );
+    }
+
+    return (
+      <div className="journal-cell-container">
+        <div 
+          className={`journal-cell-auto-expand ${displayData.needsAutoExpand ? 'two-line' : 'single-line'}`}
+          title={displayData.journalName}
+          role="gridcell"
+          aria-label={`Journal: ${displayData.journalName}`}
+        >
+          <span>
+            {highlightedText}
+          </span>
+        </div>
+      </div>
+    );
+  });
+
+  // Função para renderizar conteúdo da célula com tratamento de erros
+  const renderCellContent = (journal, columnKey, column, searchTerm, index) => {
+    try {
+      const value = getNestedValue(journal, column.field);
+
+      switch (columnKey) {
+        case 'journal':
+          // Usar o componente memoizado JournalCell com auto-expansão
+          try {
+            return (
+              <JournalCell
+                journal={journal}
+                index={index}
+                searchTerm={searchTerm}
+              />
+            );
+          } catch (error) {
+            console.error(`[ResultsTable] Erro ao renderizar JournalCell para índice ${index}:`, error);
+            
+            // Fallback para renderização de journal
+            const safeName = getSafeJournalNameForRendering(journal);
+            return (
+              <div className="journal-cell-fallback" data-testid={`journal-cell-fallback-${index}`}>
+                <span className="text-gray-900">{safeName}</span>
+                <span 
+                  className="text-xs text-red-500 ml-2" 
+                  title={`Erro na renderização: ${error.message}`}
+                >
+                  ⚠
+                </span>
+              </div>
+            );
+          }
 
       case 'abdc':
         return <ClassificationBadge type="abdc" value={value} />;
@@ -284,7 +502,23 @@ const ResultsTable = ({
           </span>
         );
     }
-  };
+  } catch (error) {
+    console.error(`[ResultsTable] Erro ao renderizar célula para coluna ${columnKey}, índice ${index}:`, error);
+    
+    // Fallback genérico para qualquer erro de renderização
+    return (
+      <div className="cell-error-fallback" data-testid={`cell-error-fallback-${columnKey}-${index}`}>
+        <span className="text-gray-500">Erro</span>
+        <span 
+          className="text-xs text-red-500 ml-1" 
+          title={`Erro na renderização da coluna ${columnKey}: ${error.message}`}
+        >
+          ⚠
+        </span>
+      </div>
+    );
+  }
+};
 
   // Função para destacar termo de busca
   const highlightSearchTerm = (text, term) => {
@@ -302,43 +536,55 @@ const ResultsTable = ({
     );
   };
 
-  // Função para ordenar coluna
-  const handleSort = (field) => {
+  // Função para ordenar coluna com useCallback para performance
+  const handleSort = useCallback((field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
       setSortDirection('asc');
     }
-  };
+  }, [sortField, sortDirection]);
 
-  // Função para selecionar/deselecionar journal
-  const toggleJournalSelection = (index) => {
-    const newSelected = new Set(selectedJournals);
-    if (newSelected.has(index)) {
-      newSelected.delete(index);
-    } else {
-      newSelected.add(index);
-    }
-    setSelectedJournals(newSelected);
-  };
+  // Função para selecionar/deselecionar journal com useCallback para performance
+  const toggleJournalSelection = useCallback((index) => {
+    setSelectedJournals(prev => {
+      const newSelected = new Set(prev);
+      if (newSelected.has(index)) {
+        newSelected.delete(index);
+      } else {
+        newSelected.add(index);
+      }
+      return newSelected;
+    });
+  }, []);
 
-  // Função para selecionar/deselecionar todos
-  const toggleSelectAll = () => {
-    if (selectedJournals.size === displayedData.length) {
-      setSelectedJournals(new Set());
-    } else {
-      setSelectedJournals(new Set(displayedData.map((_, index) => index)));
-    }
-  };
+  // Dados a serem exibidos com paginação (memoizado para performance)
+  const displayedData = useMemo(() => {
+    const totalItems = currentPage * itemsPerPage;
+    return sortedData.slice(0, Math.min(totalItems, sortedData.length));
+  }, [sortedData, currentPage, itemsPerPage]);
 
-  // Dados a serem exibidos com paginação
-  const totalItems = currentPage * itemsPerPage;
-  const displayedData = sortedData.slice(0, Math.min(totalItems, sortedData.length));
-  const hasMoreData = sortedData.length > totalItems;
+  // Verificar se há mais dados (memoizado para performance)
+  const hasMoreData = useMemo(() => {
+    return sortedData.length > currentPage * itemsPerPage;
+  }, [sortedData.length, currentPage, itemsPerPage]);
 
-  // Função para exportar selecionados
-  const exportSelected = (format) => {
+  // Função para selecionar/deselecionar todos com useCallback para performance
+  const toggleSelectAll = useCallback(() => {
+    setSelectedJournals(prev => {
+      if (prev.size === displayedData.length) {
+        return new Set();
+      } else {
+        return new Set(displayedData.map((_, index) => index));
+      }
+    });
+  }, [displayedData]);
+
+
+
+  // Função para exportar selecionados com useCallback para performance
+  const exportSelected = useCallback((format) => {
     const selectedData = displayedData.filter((_, index) =>
       selectedJournals.has(index)
     );
@@ -353,44 +599,70 @@ const ResultsTable = ({
     } else if (format === 'excel' && onExportExcel) {
       onExportExcel(selectedData);
     }
-  };
+  }, [displayedData, selectedJournals, onExportCSV, onExportExcel]);
 
-  // Componente de cabeçalho ordenável
-  const SortableHeader = ({ field, children, className = '' }) => (
+  // Componente de cabeçalho ordenável memoizado para performance
+  const SortableHeader = memo(({ field, children, className = '' }) => (
     <th
       className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors ${className}`}
       onClick={() => handleSort(field)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleSort(field);
+        }
+      }}
+      role="columnheader"
+      scope="col"
+      tabIndex={0}
+      aria-sort={
+        sortField === field 
+          ? (sortDirection === 'asc' ? 'ascending' : 'descending')
+          : 'none'
+      }
+      aria-label={`${children}. ${
+        sortField === field 
+          ? `${t('table.sorting.currentlySorted')} ${sortDirection === 'asc' ? t('table.sorting.ascending') : t('table.sorting.descending')}. ${t('table.sorting.clickToReverse')}`
+          : t('table.sorting.clickToSort')
+      }`}
     >
       <div className="flex items-center gap-2">
         <span>{children}</span>
         {sortField === field && (
           sortDirection === 'asc' ?
-            <ChevronUp className="h-3 w-3" /> :
-            <ChevronDown className="h-3 w-3" />
+            <ChevronUp className="h-3 w-3" aria-hidden="true" /> :
+            <ChevronDown className="h-3 w-3" aria-hidden="true" />
         )}
+        <span className="sr-only">
+          {sortField === field 
+            ? `${t('table.sorting.sorted')} ${sortDirection === 'asc' ? t('table.sorting.ascending') : t('table.sorting.descending')}`
+            : t('table.sorting.notSorted')
+          }
+        </span>
       </div>
     </th>
-  );
+  ));
 
-  // Componente de badge de classificação
-  const ClassificationBadge = ({ type, value }) => {
+  // Componente de badge de classificação memoizado para performance
+  const ClassificationBadge = memo(({ type, value }) => {
     if (!value) return null;
 
-    const getClassName = () => {
+    // Memoizar cálculo da classe CSS
+    const className = useMemo(() => {
       if (type === 'abdc') {
         return `classification-badge abdc-${value.toLowerCase().replace('*', '-star')}`;
       } else if (type === 'abs') {
         return `classification-badge abs-${value.replace('*', '-star')}`;
       }
       return 'classification-badge';
-    };
+    }, [type, value]);
 
     return (
-      <span className={getClassName()}>
+      <span className={className}>
         {value}
       </span>
     );
-  };
+  });
 
   if (!data.length) {
     return (
@@ -401,7 +673,7 @@ const ResultsTable = ({
             Nenhum journal encontrado
           </h3>
           <p className="text-gray-500">
-            Tente ajustar os filtros ou termo de busca
+            {language === 'en' ? 'Try adjusting the filters or search term' : `Tente ajustar os filtros ou ${t('search.term')} de busca`}
           </p>
         </div>
       </div>
@@ -430,10 +702,10 @@ const ResultsTable = ({
             <button
               onClick={() => setShowColumnSettings(!showColumnSettings)}
               className="btn btn-outline text-sm"
-              title="Configurar colunas"
+              title={t('table.columnSettings.configure')}
             >
               <Settings className="h-4 w-4" />
-              Colunas
+              {t('table.columnSettings.title')}
             </button>
 
             {/* Dropdown de configuração de colunas */}
@@ -441,7 +713,7 @@ const ResultsTable = ({
               <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
                 <div className="p-4">
                   <h3 className="text-sm font-medium text-gray-900 mb-3">
-                    Colunas Opcionais
+                    {t('table.columnSettings.optionalColumns')}
                   </h3>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {Object.entries(OPTIONAL_COLUMNS).map(([key, column]) => (
@@ -464,7 +736,7 @@ const ResultsTable = ({
                       onClick={() => setShowColumnSettings(false)}
                       className="text-xs text-gray-500 hover:text-gray-700"
                     >
-                      Fechar
+                      {t('table.columnSettings.close')}
                     </button>
                   </div>
                 </div>
@@ -475,61 +747,117 @@ const ResultsTable = ({
       </div>
 
       {/* Tabela */}
-      <div className="overflow-x-auto">
-        <table className="journal-table">
-          <thead>
-            <tr>
-              <th className="px-6 py-3 text-left">
+      <div className="overflow-x-auto" role="region" aria-label="Tabela de resultados de journals">
+        <table 
+          className="journal-table" 
+          role="table"
+          aria-label={`Tabela com ${displayedData.length} journals encontrados`}
+          aria-describedby="table-description"
+        >
+          <caption className="sr-only" id="table-description">
+            Tabela de journals acadêmicos com classificações ABDC, ABS, SJR, JCR e Qualis. 
+            Use as setas do teclado para navegar e Enter para interagir com elementos.
+            {selectedJournals.size > 0 && ` ${selectedJournals.size} journals selecionados.`}
+          </caption>
+          <thead role="rowgroup">
+            <tr role="row">
+              <th 
+                className="px-6 py-3 text-left"
+                role="columnheader"
+                aria-label="Seleção de journals"
+                scope="col"
+              >
                 <input
                   type="checkbox"
                   checked={selectedJournals.size === displayedData.length && displayedData.length > 0}
                   onChange={toggleSelectAll}
                   className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  aria-label={
+                    selectedJournals.size === displayedData.length && displayedData.length > 0
+                      ? "Desmarcar todos os journals"
+                      : "Selecionar todos os journals visíveis"
+                  }
+                  aria-describedby="select-all-help"
                 />
+                <div id="select-all-help" className="sr-only">
+                  {selectedJournals.size === displayedData.length && displayedData.length > 0
+                    ? `Todos os ${displayedData.length} journals estão selecionados. Clique para desmarcar todos.`
+                    : `Nenhum journal selecionado. Clique para selecionar todos os ${displayedData.length} journals visíveis.`
+                  }
+                </div>
               </th>
               {Object.entries(visibleColumns).map(([key, column]) => (
                 <SortableHeader key={key} field={column.field}>
                   {column.label}
                 </SortableHeader>
               ))}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ações
+              <th 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                role="columnheader"
+                scope="col"
+                aria-label={t('table.actionsColumnLabel')}
+              >
+                {t('table.actions')}
               </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody role="rowgroup">
             {displayedData.map((journal, index) => (
               <tr
                 key={index}
+                role="row"
                 className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${selectedJournals.has(index) ? 'bg-blue-50' : ''
                   }`}
+                aria-selected={selectedJournals.has(index)}
+                aria-describedby={`journal-row-${index}`}
               >
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td 
+                  className="px-6 py-4 whitespace-nowrap"
+                  role="cell"
+                >
                   <input
                     type="checkbox"
                     checked={selectedJournals.has(index)}
                     onChange={() => toggleJournalSelection(index)}
                     className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    aria-label={`Selecionar journal "${journal.journal || 'Sem nome'}"`}
+                    aria-describedby={`journal-row-${index}`}
                   />
+                  <div id={`journal-row-${index}`} className="sr-only">
+                    Journal: {journal.journal || 'Sem nome'}. 
+                    ABDC: {journal.abdc || 'Não classificado'}. 
+                    ABS: {journal.abs || 'Não classificado'}. 
+                    {selectedJournals.has(index) ? 'Selecionado' : 'Não selecionado'}.
+                  </div>
                 </td>
 
                 {Object.entries(visibleColumns).map(([key, column]) => (
-                  <td key={key} className="px-6 py-4 whitespace-nowrap text-sm">
-                    {renderCellContent(journal, key, column, searchTerm)}
+                  <td 
+                    key={key} 
+                    className="px-6 py-4 whitespace-nowrap text-sm"
+                    role="cell"
+                    aria-label={`${column.label}: ${getNestedValue(journal, column.field) || 'Não disponível'}`}
+                  >
+                    {renderCellContent(journal, key, column, searchTerm, index)}
                   </td>
                 ))}
 
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <div className="flex gap-1">
+                <td 
+                  className="px-6 py-4 whitespace-nowrap text-sm"
+                  role="cell"
+                  aria-label={t('table.actionsLabel')}
+                >
+                  <div className="flex gap-1" role="group" aria-label={t('table.actionsGroupLabel', { name: journal.journal || (language === 'en' ? 'unnamed' : 'sem nome') })}>
                     <button
                       onClick={() => {
                         const searchUrl = `https://scholar.google.com/scholar?q="${encodeURIComponent(journal.journal)}"`;
                         window.open(searchUrl, '_blank');
                       }}
                       className="text-blue-600 hover:text-blue-800 transition-colors p-1"
-                      title="Buscar no Google Scholar"
+                      title={`Buscar "${journal.journal}" no Google Scholar`}
+                      aria-label={`Buscar journal "${journal.journal}" no Google Scholar`}
                     >
-                      <ExternalLink className="h-3 w-3" />
+                      <ExternalLink className="h-3 w-3" aria-hidden="true" />
                     </button>
                     <button
                       onClick={() => {
@@ -537,9 +865,10 @@ const ResultsTable = ({
                         window.open(searchUrl, '_blank');
                       }}
                       className="text-green-600 hover:text-green-800 transition-colors p-1"
-                      title="Buscar Scope no Google"
+                      title={`Buscar scope do journal "${journal.journal}" no Google`}
+                      aria-label={`Buscar scope do journal "${journal.journal}" no Google`}
                     >
-                      <Search className="h-3 w-3" />
+                      <Search className="h-3 w-3" aria-hidden="true" />
                     </button>
                     <button
                       onClick={() => {
@@ -547,9 +876,10 @@ const ResultsTable = ({
                         window.open(searchUrl, '_blank');
                       }}
                       className="text-purple-600 hover:text-purple-800 transition-colors p-1"
-                      title="Buscar Length Words no Google"
+                      title={`Buscar informações sobre tamanho de artigos do journal "${journal.journal}" no Google`}
+                      aria-label={`Buscar informações sobre tamanho de artigos do journal "${journal.journal}" no Google`}
                     >
-                      <Search className="h-3 w-3" />
+                      <Search className="h-3 w-3" aria-hidden="true" />
                     </button>
                   </div>
                 </td>
@@ -566,11 +896,11 @@ const ResultsTable = ({
           <div className="flex justify-between items-center text-sm text-gray-600">
             <div>
               <span>
-                Mostrando {displayedData.length} de {sortedData.length} journals
+                {t('table.showingResults', { count: displayedData.length, total: sortedData.length })}
               </span>
               {sortedData.length !== data.length && (
                 <span className="text-blue-600 ml-2">
-                  (filtrados de {data.length} total)
+                  ({t('table.filteredFrom', { total: data.length })})
                 </span>
               )}
             </div>
@@ -586,7 +916,7 @@ const ResultsTable = ({
               )}
 
               <span>
-                Ordenado por: <strong>{sortField}</strong> ({sortDirection === 'asc' ? 'crescente' : 'decrescente'})
+                {t('table.sorting.sortedBy')} <strong>{sortField}</strong> ({sortDirection === 'asc' ? t('table.sorting.ascending') : t('table.sorting.descending')})
               </span>
             </div>
           </div>
@@ -598,7 +928,7 @@ const ResultsTable = ({
                 onClick={() => setCurrentPage(prev => prev + 1)}
                 className="btn btn-outline"
               >
-                Carregar mais {Math.min(itemsPerPage, sortedData.length - displayedData.length)} journals
+                {t('categories.loadMore').replace('100', Math.min(itemsPerPage, sortedData.length - displayedData.length).toString())}
               </button>
             </div>
           )}

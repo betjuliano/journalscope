@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Script de Deploy para JournalScope v3.0
-echo "🚀 Iniciando deploy do JournalScope v3.0..."
+# Script de Deploy para JournalScope v4.0
+echo "🚀 Iniciando deploy do JournalScope v4.0..."
 
 # 1. Build da imagem Docker
 echo "📦 Construindo imagem Docker..."
-docker build -t periodicos:3v .
+docker build -t periodicos:4v .
 
 # 2. Parar e remover container anterior (se existir)
 echo "🛑 Parando container anterior..."

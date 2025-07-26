@@ -1,7 +1,10 @@
 import React from 'react';
 import { AlertCircle, RefreshCw, FileX, Database } from 'lucide-react';
+import { useI18n } from '../contexts/I18nContext';
 
 const ErrorScreen = ({ error, onRetry }) => {
+  const { t } = useI18n();
+  
   // Analisar tipo de erro para dar orientações específicas
   const getErrorType = () => {
     if (!error) return 'unknown';
@@ -37,42 +40,26 @@ const ErrorScreen = ({ error, onRetry }) => {
   const getErrorTitle = () => {
     switch (errorType) {
       case 'file':
-        return 'Arquivos não Encontrados';
+        return t('error.types.file');
       case 'data':
-        return 'Erro nos Dados';
+        return t('error.types.data');
       case 'network':
-        return 'Erro de Conexão';
+        return t('error.types.network');
       default:
-        return 'Erro no Carregamento';
+        return t('error.types.general');
     }
   };
 
   const getErrorSuggestions = () => {
     switch (errorType) {
       case 'file':
-        return [
-          'Verifique se os arquivos Excel estão na pasta "data/"',
-          'Confirme os nomes: ABDC2022.xlsx, ABS2024.xlsx, Wiley.xlsx',
-          'Certifique-se de que os arquivos não estão corrompidos'
-        ];
+        return t('error.suggestions.file');
       case 'data':
-        return [
-          'Verifique se as planilhas têm as abas corretas',
-          'Confirme se os dados estão no formato esperado',
-          'Tente recarregar os dados'
-        ];
+        return t('error.suggestions.data');
       case 'network':
-        return [
-          'Verifique sua conexão com a internet',
-          'Tente recarregar a página',
-          'Aguarde um momento e tente novamente'
-        ];
+        return t('error.suggestions.network');
       default:
-        return [
-          'Tente recarregar a aplicação',
-          'Verifique o console do navegador (F12)',
-          'Contacte o suporte se o problema persistir'
-        ];
+        return t('error.suggestions.general');
     }
   };
 
@@ -88,13 +75,13 @@ const ErrorScreen = ({ error, onRetry }) => {
           
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <p className="text-red-700 text-sm break-words">
-              {error || 'Erro desconhecido durante o carregamento'}
+              {error || t('error.unknownError')}
             </p>
           </div>
           
           {/* Sugestões de solução */}
           <div className="text-left mb-6">
-            <h3 className="font-medium text-gray-800 mb-3">Possíveis soluções:</h3>
+            <h3 className="font-medium text-gray-800 mb-3">{t('error.possibleSolutions')}</h3>
             <ul className="text-sm text-gray-600 space-y-2">
               {getErrorSuggestions().map((suggestion, index) => (
                 <li key={index} className="flex items-start gap-2">
@@ -107,7 +94,7 @@ const ErrorScreen = ({ error, onRetry }) => {
           
           {/* Informações técnicas */}
           <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
-            <h4 className="font-medium text-gray-800 mb-2">Arquivos Esperados:</h4>
+            <h4 className="font-medium text-gray-800 mb-2">{t('error.expectedFiles')}</h4>
             <div className="text-xs text-gray-600 space-y-1">
               <div>📁 data/ABDC2022.xlsx</div>
               <div>📁 data/ABS2024.xlsx</div>
@@ -120,11 +107,11 @@ const ErrorScreen = ({ error, onRetry }) => {
             className="btn btn-error w-full flex items-center justify-center gap-2"
           >
             <RefreshCw className="h-4 w-4" />
-            Tentar novamente
+            {t('error.retry')}
           </button>
 
           <div className="mt-6 text-xs text-gray-500">
-            Sistema de Consulta de Journals Acadêmicos
+            {t('loading.systemDescription')}
           </div>
         </div>
       </div>

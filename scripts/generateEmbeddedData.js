@@ -112,7 +112,7 @@ function processABDCFile() {
     const rating = row[FILES_CONFIG.ABDC.columns.rating]?.toString().trim();
     
     if (journal && rating) {
-      journals[journal.toLowerCase()] = rating;
+      journals[normalizeJournalName(journal)] = rating;
     }
   });
   
@@ -141,7 +141,7 @@ function processABSFile() {
     const jifRank = row[FILES_CONFIG.ABS.columns.jifRank]?.toString().trim();
     
     if (journal && rating) {
-      journals[journal.toLowerCase()] = {
+      journals[normalizeJournalName(journal)] = {
         rating,
         citationRank: citationRank || '',
         sjrRank: sjrRank || '',
@@ -186,7 +186,7 @@ function processWileyFile() {
     const apc = row[FILES_CONFIG.WILEY.columns.apc]?.toString().trim();
     
     if (journal) {
-      journals[journal.toLowerCase()] = {
+      journals[normalizeJournalName(journal)] = {
         subjectArea: subject || "",
         apcUsd: apc || ""
       };
@@ -219,7 +219,7 @@ function processSJRFile() {
     const citesPerDoc = parseFloat(row[FILES_CONFIG.SJR.columns.citesPerDoc]) || 0;
     
     if (journal && quartile) {
-      journals[journal.toLowerCase()] = {
+      journals[normalizeJournalName(journal)] = {
         quartile,
         score,
         hIndex,
@@ -261,7 +261,7 @@ function processJCRFile() {
     const category = row[FILES_CONFIG.JCR.columns.category]?.toString().trim();
     
     if (journal) {
-      journals[journal.toLowerCase()] = {
+      journals[normalizeJournalName(journal)] = {
         issn: issn || '',
         impactFactor,
         quartile: quartile || '',
@@ -300,7 +300,7 @@ function processCiteScoreFile() {
     const snip = (snipStr && snipStr !== 'N/A') ? parseFloat(snipStr) : 0;
     
     if (journal) {
-      journals[journal.toLowerCase()] = {
+      journals[normalizeJournalName(journal)] = {
         score,
         snip,
         year: 2024 // CiteScore 2024
@@ -333,7 +333,7 @@ function processPredatoryFile() {
     const isPredatory = predatoryFlag === 'SIM' || predatoryFlag === 'YES' || predatoryFlag === '1';
     
     if (journal) {
-      journals[journal.toLowerCase()] = {
+      journals[normalizeJournalName(journal)] = {
         isPredatory,
         source: 'The Predatory Journals List',
         reason: isPredatory ? 'Listed as predatory journal' : '',
@@ -344,6 +344,19 @@ function processPredatoryFile() {
   
   console.log(`✅ Predatory processado: ${Object.keys(journals).length} journals`);
   return journals;
+}
+
+/**
+ * Normaliza nome do journal para comparação
+ */
+function normalizeJournalName(name) {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove acentos (ã → a, ç → c, etc)
+    .replace(/~/g, '') // Remove til (~)
+    .replace(/ç/g, 'c') // Converte ç para c
+    .trim();
 }
 
 /**

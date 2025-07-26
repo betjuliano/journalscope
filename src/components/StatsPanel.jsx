@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BarChart3, PieChart, TrendingUp, Download, Database, BookOpen, Building, DollarSign, X } from 'lucide-react';
+import { useI18n } from '../contexts/I18nContext';
 
 const StatsPanel = ({ 
   stats, 
@@ -8,6 +9,7 @@ const StatsPanel = ({
   onClose,
   onExportStats 
 }) => {
+  const { t, language } = useI18n();
   const [activeTab, setActiveTab] = useState('overview');
 
   if (!isVisible) return null;
@@ -59,33 +61,33 @@ const StatsPanel = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={Database}
-          title="Total de Journals"
+          title={t('statsPanel.general.total')}
           value={stats.total?.toLocaleString() || '0'}
-          subtitle="Base completa"
+          subtitle={t('statsPanel.general.completeBase')}
           color="gray"
         />
         
         <StatCard
           icon={BookOpen}
-          title="Com ABDC"
+          title={t('statsPanel.general.withABDC')}
           value={stats.withABDC?.toLocaleString() || '0'}
-          subtitle={`${getPercentage(stats.withABDC, stats.total)}% do total`}
+          subtitle={`${getPercentage(stats.withABDC, stats.total)}% ${t('statsPanel.general.ofTotal')}`}
           color="blue"
         />
         
         <StatCard
           icon={TrendingUp}
-          title="Com ABS"
+          title={t('statsPanel.general.withABS')}
           value={stats.withABS?.toLocaleString() || '0'}
-          subtitle={`${getPercentage(stats.withABS, stats.total)}% do total`}
+          subtitle={`${getPercentage(stats.withABS, stats.total)}% ${t('statsPanel.general.ofTotal')}`}
           color="green"
         />
         
         <StatCard
           icon={Building}
-          title="Wiley"
+          title={t('statsPanel.general.withWiley')}
           value={stats.withWiley?.toLocaleString() || '0'}
-          subtitle={`${getPercentage(stats.withWiley, stats.total)}% do total`}
+          subtitle={`${getPercentage(stats.withWiley, stats.total)}% ${t('statsPanel.general.ofTotal')}`}
           color="purple"
         />
       </div>
@@ -94,19 +96,19 @@ const StatsPanel = ({
       <div className="bg-gray-50 rounded-lg p-4">
         <h4 className="font-semibold mb-3 flex items-center gap-2">
           <Database className="h-5 w-5" />
-          Status das Fontes de Dados
+          {t('statsPanel.dataSourcesStatus')}
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="flex items-center justify-between p-3 bg-white rounded border">
             <div>
               <div className="font-medium">ABDC 2022</div>
               <div className="text-sm text-gray-600">
-                {dataSource.abdc?.loaded ? 'Carregado' : 'Não carregado'}
+                {dataSource.abdc?.loaded ? t('statsPanel.loaded') : t('statsPanel.notLoaded')}
               </div>
             </div>
             <div className="text-right">
               <div className="font-bold text-lg">{dataSource.abdc?.count || 0}</div>
-              <div className="text-xs text-gray-500">journals</div>
+              <div className="text-xs text-gray-500">{t('statsPanel.general.journals')}</div>
             </div>
           </div>
           
@@ -114,12 +116,12 @@ const StatsPanel = ({
             <div>
               <div className="font-medium">ABS 2024</div>
               <div className="text-sm text-gray-600">
-                {dataSource.abs?.loaded ? 'Carregado' : 'Não carregado'}
+                {dataSource.abs?.loaded ? t('statsPanel.loaded') : t('statsPanel.notLoaded')}
               </div>
             </div>
             <div className="text-right">
               <div className="font-bold text-lg">{dataSource.abs?.count || 0}</div>
-              <div className="text-xs text-gray-500">journals</div>
+              <div className="text-xs text-gray-500">{t('statsPanel.general.journals')}</div>
             </div>
           </div>
           
@@ -127,12 +129,12 @@ const StatsPanel = ({
             <div>
               <div className="font-medium">Wiley</div>
               <div className="text-sm text-gray-600">
-                {dataSource.wiley?.loaded ? 'Carregado' : 'Não carregado'}
+                {dataSource.wiley?.loaded ? t('statsPanel.loaded') : t('statsPanel.notLoaded')}
               </div>
             </div>
             <div className="text-right">
               <div className="font-bold text-lg">{dataSource.wiley?.count || 0}</div>
-              <div className="text-xs text-gray-500">journals</div>
+              <div className="text-xs text-gray-500">{t('statsPanel.general.journals')}</div>
             </div>
           </div>
         </div>
@@ -147,7 +149,7 @@ const StatsPanel = ({
       <div className="bg-white rounded-lg border p-6">
         <h4 className="font-semibold mb-4 flex items-center gap-2">
           <BarChart3 className="h-5 w-5 text-blue-600" />
-          Distribuição ABDC
+          {t('statsPanel.distributionABDC')}
         </h4>
         <div className="space-y-3">
           {Object.entries(stats.abdcDistribution || {})
@@ -158,7 +160,7 @@ const StatsPanel = ({
             .map(([rating, count]) => (
               <ProgressBar
                 key={rating}
-                label={`Classificação ${rating}`}
+                label={`${t('labels.classification')} ${rating}`}
                 value={count}
                 total={stats.withABDC}
                 color={rating === 'A*' ? 'green' : rating === 'A' ? 'blue' : rating === 'B' ? 'yellow' : 'gray'}
@@ -171,7 +173,7 @@ const StatsPanel = ({
       <div className="bg-white rounded-lg border p-6">
         <h4 className="font-semibold mb-4 flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-green-600" />
-          Distribuição ABS
+          {t('statsPanel.distributionABS')}
         </h4>
         <div className="space-y-3">
           {Object.entries(stats.absDistribution || {})
@@ -182,7 +184,7 @@ const StatsPanel = ({
             .map(([rating, count]) => (
               <ProgressBar
                 key={rating}
-                label={`Classificação ${rating}`}
+                label={`${t('labels.classification')} ${rating}`}
                 value={count}
                 total={stats.withABS}
                 color={rating === '4*' ? 'green' : rating === '4' ? 'blue' : rating === '3' ? 'yellow' : rating === '2' ? 'orange' : 'gray'}
@@ -193,10 +195,10 @@ const StatsPanel = ({
 
       {/* Comparação de classificações */}
       <div className="bg-white rounded-lg border p-6">
-        <h4 className="font-semibold mb-4">Comparação de Classificações</h4>
+        <h4 className="font-semibold mb-4">{t('statsPanel.classificationsComparison')}</h4>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <div className="text-sm text-gray-600 mb-2">Journals com ambas classificações</div>
+            <div className="text-sm text-gray-600 mb-2">{t('statsPanel.bothClassifications')}</div>
             <div className="text-2xl font-bold text-indigo-600">
               {stats.total ? (
                 ((stats.withABDC + stats.withABS - stats.total) > 0 ? 
@@ -204,19 +206,19 @@ const StatsPanel = ({
               ) : 0}
             </div>
             <div className="text-xs text-gray-500">
-              ABDC + ABS
+              {t('statsPanel.abdcPlusAbs')}
             </div>
           </div>
           
           <div>
-            <div className="text-sm text-gray-600 mb-2">Apenas uma classificação</div>
+            <div className="text-sm text-gray-600 mb-2">{t('statsPanel.singleClassification')}</div>
             <div className="text-2xl font-bold text-orange-600">
               {stats.total ? (
                 stats.total - Math.max(stats.withABDC, stats.withABS)
               ) : 0}
             </div>
             <div className="text-xs text-gray-500">
-              Somente ABDC ou ABS
+              {t('statsPanel.onlyAbdcOrAbs')}
             </div>
           </div>
         </div>
@@ -231,25 +233,25 @@ const StatsPanel = ({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard
           icon={Building}
-          title="Total Wiley"
+          title={t('statsPanel.totalWiley')}
           value={stats.withWiley?.toLocaleString() || '0'}
-          subtitle="Journals na Wiley"
+          subtitle={t('statsPanel.journalsInWiley')}
           color="purple"
         />
         
         <StatCard
           icon={DollarSign}
-          title="Com APC"
-          value={Object.values(stats.wileySubjects || {}).length}
-          subtitle="Áreas temáticas"
+          title={t('statsPanel.withAPC')}
+          value={stats.wileySubjects ? Object.values(stats.wileySubjects).length : 0}
+          subtitle={t('statsPanel.thematicAreas')}
           color="green"
         />
         
         <StatCard
           icon={TrendingUp}
-          title="Cobertura"
+          title={t('statsPanel.coverage')}
           value={`${getPercentage(stats.withWiley, stats.total)}%`}
-          subtitle="Do total de journals"
+          subtitle={`${t('statsPanel.general.ofTotal')} ${t('statsPanel.general.journals')}`}
           color="blue"
         />
       </div>
@@ -259,7 +261,7 @@ const StatsPanel = ({
         <div className="bg-white rounded-lg border p-6">
           <h4 className="font-semibold mb-4 flex items-center gap-2">
             <PieChart className="h-5 w-5 text-purple-600" />
-            Top Áreas Temáticas (Wiley)
+            {t('statsPanel.topThematicAreas')}
           </h4>
           <div className="space-y-2 max-h-60 overflow-y-auto">
             {Object.entries(stats.wileySubjects)
@@ -288,7 +290,7 @@ const StatsPanel = ({
         <div className="flex justify-between items-center p-6 border-b">
           <h3 className="text-xl font-semibold flex items-center gap-2">
             <BarChart3 className="h-6 w-6" />
-            Estatísticas do Banco de Dados
+            {t('statsPanel.title')}
           </h3>
           
           <div className="flex items-center gap-3">
@@ -296,10 +298,10 @@ const StatsPanel = ({
               <button
                 onClick={onExportStats}
                 className="btn btn-outline text-sm"
-                title="Exportar estatísticas"
+                title={t('statsPanel.export')}
               >
                 <Download className="h-4 w-4" />
-                Exportar
+                {t('statsPanel.export')}
               </button>
             )}
             
@@ -316,9 +318,9 @@ const StatsPanel = ({
         <div className="border-b">
           <nav className="flex space-x-8 px-6">
             {[
-              { id: 'overview', name: 'Visão Geral', icon: Database },
-              { id: 'classifications', name: 'Classificações', icon: BarChart3 },
-              { id: 'wiley', name: 'Wiley', icon: Building }
+              { id: 'overview', name: t('statsPanel.tabs.overview'), icon: Database },
+              { id: 'classifications', name: t('statsPanel.tabs.classifications'), icon: BarChart3 },
+              { id: 'wiley', name: t('statsPanel.tabs.wiley'), icon: Building }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -347,10 +349,10 @@ const StatsPanel = ({
         <div className="border-t px-6 py-4 bg-gray-50">
           <div className="flex justify-between items-center text-sm text-gray-600">
             <div>
-              Última atualização: {new Date().toLocaleString('pt-BR')}
+              {t('footer.lastUpdate')} {new Date().toLocaleString(language === 'en' ? 'en-US' : 'pt-BR')}
             </div>
             <div>
-              JournalScope v1.0.0
+              {t('footer.version')}
             </div>
           </div>
         </div>

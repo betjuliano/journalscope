@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # JournalScope - Aplicação Principal Atualizada (usando Traefik global existente)
   journalscope-multidominio:
-    image: periodicos:3v
+    image: periodicos:4v
     networks:
       - iaprojetos
     labels:
@@ -31,7 +31,7 @@ services:
     environment:
       - NODE_ENV=production
       - VITE_APP_TITLE=JournalScope
-      - VITE_APP_VERSION=3.0.0
+      - VITE_APP_VERSION=4.0.0
     volumes:
       - logs-nginx:/var/log/nginx
     deploy:

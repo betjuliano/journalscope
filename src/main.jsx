@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { I18nProvider } from './contexts/I18nContext';
 import './components/index.css';
 
 // Configurações globais para JournalScope
@@ -63,7 +64,9 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 // Renderizar aplicação
 root.render(
   <React.StrictMode>
-    <App />
+    <I18nProvider>
+      <App />
+    </I18nProvider>
   </React.StrictMode>
 );
 
@@ -135,15 +138,116 @@ window.addEventListener('unhandledrejection', (event) => {
   event.preventDefault();
 });
 
-// Informações de performance (desenvolvimento)
+// Enhanced performance monitoring and optimization (all environments)
+const initializePerformanceOptimizations = async () => {
+  try {
+    // Initialize performance monitoring
+    const { initPerformanceMonitoring } = await import('./utils/performance.js');
+    initPerformanceMonitoring();
+    
+    // Initialize progressive UI loading with optimized configuration (temporarily disabled)
+    // const { initProgressiveUILoading, preloadHighPriorityComponents } = 
+    //   await import('./utils/progressiveUILoader.js');
+    
+    // // Initialize progressive UI loading system
+    // initProgressiveUILoading();
+    
+    // // Preload high-priority components immediately
+    // await preloadHighPriorityComponents();
+    
+    // Initialize bundle optimization
+    const { startUsagePersistence } = await import('./utils/bundleOptimizer.js');
+    startUsagePersistence();
+    
+    // Simple translation preloading
+    try {
+      const currentLanguage = localStorage.getItem('journalscope_language') || 'pt';
+      await import(`./translations/${currentLanguage}.js`);
+      
+      if (import.meta.env.DEV) {
+        console.log(`🌐 Translations preloaded for ${currentLanguage}`);
+      }
+    } catch (error) {
+      console.warn('Failed to preload translations:', error);
+    }
+    
+    if (import.meta.env.DEV) {
+      console.log('✅ Performance optimizations initialized');
+    }
+    
+  } catch (error) {
+    console.warn('Performance optimization initialization failed:', error);
+  }
+};
+
+// Initialize optimizations immediately
+initializePerformanceOptimizations();
+
+// Enhanced performance reporting (development only)
 if (import.meta.env.DEV) {
   window.addEventListener('load', () => {
-    setTimeout(() => {
-      const perfData = performance.getEntriesByType('navigation')[0];
-      console.log('🚀 Performance Metrics:');
-      console.log('- DOM Content Loaded:', Math.round(perfData.domContentLoadedEventEnd), 'ms');
-      console.log('- Load Complete:', Math.round(perfData.loadEventEnd), 'ms');
-      console.log('- DOM Interactive:', Math.round(perfData.domInteractive), 'ms');
+    setTimeout(async () => {
+      try {
+        const perfData = performance.getEntriesByType('navigation')[0];
+        
+        console.group('🚀 JournalScope Performance Report');
+        console.log('⏱️ Navigation Timing:');
+        console.log(`  - DOM Content Loaded: ${Math.round(perfData.domContentLoadedEventEnd)}ms`);
+        console.log(`  - Load Complete: ${Math.round(perfData.loadEventEnd)}ms`);
+        console.log(`  - DOM Interactive: ${Math.round(perfData.domInteractive)}ms`);
+        console.log(`  - First Paint: ${Math.round(perfData.responseEnd - perfData.fetchStart)}ms`);
+        
+        // Memory metrics
+        if (performance.memory) {
+          const memoryMB = Math.round(performance.memory.usedJSHeapSize / 1024 / 1024);
+          const limitMB = Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024);
+          console.log(`💾 Memory Usage: ${memoryMB}MB / ${limitMB}MB (${((memoryMB/limitMB)*100).toFixed(1)}%)`);
+        }
+        
+        // Progressive UI loading metrics (temporarily disabled)
+        // const { getProgressiveUIMetrics } = await import('./utils/progressiveUILoader.js');
+        // const progressiveUIMetrics = getProgressiveUIMetrics();
+        console.log('📦 Progressive UI Loading: (disabled for optimization)');
+        // console.log(`  - Components: ${progressiveUIMetrics.loadedComponents}/${progressiveUIMetrics.totalComponents} loaded`);
+        // console.log(`  - Progress: ${progressiveUIMetrics.loadingProgress.toFixed(1)}%`);
+        // console.log(`  - Success Rate: ${progressiveUIMetrics.successRate.toFixed(1)}%`);
+        // console.log(`  - Average Load Time: ${progressiveUIMetrics.averageLoadTime.toFixed(2)}ms`);
+        // console.log(`  - Memory Efficiency: ${progressiveUIMetrics.memoryEfficiency.toFixed(2)} components/KB`);
+        
+        // Translation loading metrics (simplified)
+        console.log('🌐 Translation Loading: Simplified for stability');
+        
+        // Bundle optimization metrics (enhanced)
+        const { getBundleMetrics } = await import('./utils/bundleOptimizer.js');
+        const bundleMetrics = getBundleMetrics();
+        console.log('📊 Bundle Optimization:');
+        console.log(`  - Usage Rate: ${bundleMetrics.usageRate.toFixed(1)}%`);
+        console.log(`  - Potential Savings: ${(bundleMetrics.potentialSavings / 1024).toFixed(1)}KB`);
+        console.log(`  - Tracked Keys: ${bundleMetrics.totalTracked}`);
+        console.log(`  - Bundle optimization: Simplified for stability`);
+        
+        // Overall performance assessment
+        const { getPerformanceReport } = await import('./utils/performance.js');
+        const performanceReport = getPerformanceReport();
+        console.log(`🎯 Performance Score: ${performanceReport.score}/100`);
+        
+        if (performanceReport.recommendations.length > 0) {
+          console.log('💡 Recommendations:');
+          performanceReport.recommendations.forEach(rec => console.log(`  - ${rec}`));
+        }
+        
+        console.groupEnd();
+        
+        // Performance warnings
+        if (perfData.loadEventEnd > 3000) {
+          console.warn('🐌 Slow initial load detected (>3s) - consider further optimization');
+        } else if (perfData.loadEventEnd < 1000) {
+          console.log('⚡ Excellent load performance achieved!');
+        }
+        
+      } catch (error) {
+        console.warn('Performance reporting failed:', error);
+      }
     }, 1000);
   });
 }

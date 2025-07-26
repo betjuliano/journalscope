@@ -12,6 +12,9 @@ export * from './dataProcessor';
 // Importar todas as funções de exportação
 export * from './exportUtils';
 
+// Importar todas as funções de texto
+export * from './textUtils';
+
 // Importações padrão para uso como objetos
 import * as constants from './constants';
 import * as dataProcessor from './dataProcessor';

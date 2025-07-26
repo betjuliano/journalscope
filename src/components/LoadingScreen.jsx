@@ -1,8 +1,9 @@
 import React from 'react';
 import { Database, CheckCircle, Zap } from 'lucide-react';
+import { useI18n } from '../contexts/I18nContext';
 
 const LoadingScreen = ({ 
-  processingStatus = 'Carregando dados...', 
+  processingStatus, 
   dataSource = {
     abdc: { count: 0, loaded: false },
     abs: { count: 0, loaded: false },
@@ -13,12 +14,17 @@ const LoadingScreen = ({
     predatory: { count: 0, loaded: false }
   } 
 }) => {
+  const { t } = useI18n();
+  
+  // Set default processing status if not provided
+  const defaultProcessingStatus = processingStatus || t('loading.processingData');
+  
   // Calcular progresso
   const totalSources = 7;
   const loadedSources = Object.values(dataSource).filter(source => source.loaded).length;
   const progressPercentage = (loadedSources / totalSources) * 100;
   
-  // Verificar se está usando cache
+  // Check if using cache
   const isUsingCache = processingStatus.includes('cache');
   
   return (
@@ -31,12 +37,12 @@ const LoadingScreen = ({
           </div>
           
           <h2 className="text-xl font-semibold text-gray-800 mb-2">
-            {isUsingCache ? 'JournalScope ⚡' : 'Carregando JournalScope'}
+            {isUsingCache ? t('loading.titleFast') : t('loading.title')}
           </h2>
           
           {isUsingCache && (
             <p className="text-sm text-yellow-600 mb-4 font-medium">
-              Carregamento rápido ativado!
+              {t('loading.fastLoadingEnabled')}
             </p>
           )}
           
@@ -48,7 +54,7 @@ const LoadingScreen = ({
             ></div>
           </div>
           
-          <p className="text-gray-600 mb-6">{processingStatus}</p>
+          <p className="text-gray-600 mb-6">{defaultProcessingStatus}</p>
           
           {/* Status de carregamento dos arquivos */}
           <div className="space-y-2 text-sm max-h-80 overflow-y-auto">
@@ -61,10 +67,10 @@ const LoadingScreen = ({
                 ) : (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent"></div>
                 )}
-                ABDC Database
+                {t('loading.databases.abdc')}
               </span>
               <span className="font-medium">
-                {dataSource.abdc.loaded ? `${dataSource.abdc.count} journals ✓` : 'Carregando...'}
+                {dataSource.abdc.loaded ? `${dataSource.abdc.count} ${t('loading.journalsLoaded')}` : t('loading.loadingStatus')}
               </span>
             </div>
             
@@ -77,10 +83,10 @@ const LoadingScreen = ({
                 ) : (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent"></div>
                 )}
-                ABS Database
+                {t('loading.databases.abs')}
               </span>
               <span className="font-medium">
-                {dataSource.abs.loaded ? `${dataSource.abs.count} journals ✓` : 'Carregando...'}
+                {dataSource.abs.loaded ? `${dataSource.abs.count} ${t('loading.journalsLoaded')}` : t('loading.loadingStatus')}
               </span>
             </div>
             
@@ -93,10 +99,10 @@ const LoadingScreen = ({
                 ) : (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent"></div>
                 )}
-                JCR Database
+                {t('loading.databases.jcr')}
               </span>
               <span className="font-medium">
-                {dataSource.jcr.loaded ? `${dataSource.jcr.count} journals ✓` : 'Carregando...'}
+                {dataSource.jcr.loaded ? `${dataSource.jcr.count} ${t('loading.journalsLoaded')}` : t('loading.loadingStatus')}
               </span>
             </div>
             
@@ -109,10 +115,10 @@ const LoadingScreen = ({
                 ) : (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent"></div>
                 )}
-                SJR Database
+                {t('loading.databases.sjr')}
               </span>
               <span className="font-medium">
-                {dataSource.sjr.loaded ? `${dataSource.sjr.count} journals ✓` : 'Carregando...'}
+                {dataSource.sjr.loaded ? `${dataSource.sjr.count} ${t('loading.journalsLoaded')}` : t('loading.loadingStatus')}
               </span>
             </div>
             
@@ -125,10 +131,10 @@ const LoadingScreen = ({
                 ) : (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent"></div>
                 )}
-                CiteScore Database
+                {t('loading.databases.citeScore')}
               </span>
               <span className="font-medium">
-                {dataSource.citeScore.loaded ? `${dataSource.citeScore.count} journals ✓` : 'Carregando...'}
+                {dataSource.citeScore.loaded ? `${dataSource.citeScore.count} ${t('loading.journalsLoaded')}` : t('loading.loadingStatus')}
               </span>
             </div>
             
@@ -141,10 +147,10 @@ const LoadingScreen = ({
                 ) : (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent"></div>
                 )}
-                Wiley Database
+                {t('loading.databases.wiley')}
               </span>
               <span className="font-medium">
-                {dataSource.wiley.loaded ? `${dataSource.wiley.count} journals ✓` : 'Carregando...'}
+                {dataSource.wiley.loaded ? `${dataSource.wiley.count} ${t('loading.journalsLoaded')}` : t('loading.loadingStatus')}
               </span>
             </div>
             
@@ -157,10 +163,10 @@ const LoadingScreen = ({
                 ) : (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent"></div>
                 )}
-                Predatory Journals
+                {t('loading.databases.predatory')}
               </span>
               <span className="font-medium">
-                {dataSource.predatory.loaded ? `${dataSource.predatory.count} journals ✓` : 'Carregando...'}
+                {dataSource.predatory.loaded ? `${dataSource.predatory.count} ${t('loading.journalsLoaded')}` : t('loading.loadingStatus')}
               </span>
             </div>
           </div>
@@ -168,12 +174,12 @@ const LoadingScreen = ({
           {/* Dicas de performance */}
           {!isUsingCache && (
             <div className="mt-4 p-3 bg-blue-50 rounded-lg text-xs text-blue-700">
-              💡 <strong>Dica:</strong> Após o primeiro carregamento, os dados ficam em cache para acesso mais rápido!
+              {t('loading.performanceTip')}
             </div>
           )}
           
           <div className="mt-6 text-xs text-gray-500">
-            Sistema de Consulta de Journals Acadêmicos
+            {t('loading.systemDescription')}
           </div>
         </div>
       </div>
