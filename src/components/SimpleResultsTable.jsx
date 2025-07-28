@@ -3,7 +3,7 @@ import { ExternalLink, ChevronUp, ChevronDown, Settings, Eye, EyeOff } from 'luc
 import { useI18n } from '../contexts/I18nContext';
 
 // Componente simples para célula de journal com expansão
-const JournalCell = ({ journal, index, searchTerm, isExpanded, onToggleExpansion }) => {
+const JournalCell = ({ journal, index, searchTerm, isExpanded, onToggleExpansion, language = 'pt' }) => {
   const journalName = journal?.journal || 'Nome não disponível';
   const shouldTruncate = journalName.length > 30;
   
@@ -40,7 +40,7 @@ const JournalCell = ({ journal, index, searchTerm, isExpanded, onToggleExpansion
             onToggleExpansion(index);
           }}
           className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-blue-600 transition-colors flex-shrink-0"
-          title={isExpanded ? 'Recolher' : 'Expandir'}
+          title={isExpanded ? (language === 'pt' ? 'Recolher' : 'Collapse') : (language === 'pt' ? 'Expandir' : 'Expand')}
         >
           {isExpanded ? '−' : '+'}
         </button>
@@ -345,7 +345,7 @@ const SimpleResultsTable = ({
   if (!data.length) {
     return (
       <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-        <p className="text-gray-500">Nenhum journal encontrado</p>
+        <p className="text-gray-500">{t('table.noResults')}</p>
       </div>
     );
   }
@@ -356,11 +356,11 @@ const SimpleResultsTable = ({
       <div className="flex justify-between items-center px-6 py-4 bg-gray-50 border-b">
         <div className="flex items-center gap-4">
           <h2 className="text-lg font-semibold text-gray-800">
-            Resultados ({data.length} journals)
+            {t('table.results', { count: data.length })}
           </h2>
           {selectedJournals.size > 0 && (
             <span className="text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-              {selectedJournals.size} selecionados
+              {selectedJournals.size} {language === 'pt' ? 'selecionados' : 'selected'}
             </span>
           )}
         </div>
@@ -470,6 +470,7 @@ const SimpleResultsTable = ({
                       searchTerm={searchTerm}
                       isExpanded={expandedJournals.has(index)}
                       onToggleExpansion={toggleJournalExpansion}
+                      language={language}
                     />
                   </td>
                 )}
@@ -534,7 +535,7 @@ const SimpleResultsTable = ({
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                         journal.predatory.isPredatory ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
                       }`}>
-                        {journal.predatory.isPredatory ? 'Sim' : 'Não'}
+                        {journal.predatory.isPredatory ? (language === 'pt' ? 'Sim' : 'Yes') : (language === 'pt' ? 'Não' : 'No')}
                       </span>
                     ) : (
                       <span className="text-gray-400">-</span>
@@ -551,7 +552,7 @@ const SimpleResultsTable = ({
                         window.open(`https://www.google.com/search?q=${searchQuery}`, '_blank');
                       }}
                       className="inline-flex items-center justify-center p-1.5 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-md transition-colors"
-                      title={`Buscar "${journal.journal}" no Google`}
+                      title={language === 'pt' ? `Buscar "${journal.journal}" no Google` : `Search "${journal.journal}" on Google`}
                     >
                       <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -568,7 +569,7 @@ const SimpleResultsTable = ({
                         window.open(`https://scholar.google.com/scholar?q=${searchQuery}`, '_blank');
                       }}
                       className="inline-flex items-center justify-center p-1.5 text-green-600 hover:text-green-900 hover:bg-green-50 rounded-md transition-colors"
-                      title={`Buscar "${journal.journal}" no Google Acadêmico`}
+                      title={language === 'pt' ? `Buscar "${journal.journal}" no Google Acadêmico` : `Search "${journal.journal}" on Google Scholar`}
                     >
                       <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M5.242 13.769L0 9.5 12 0l12 9.5-5.242 4.269C17.548 11.249 14.978 9.5 12 9.5c-2.977 0-5.548 1.748-6.758 4.269zM12 10a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"/>
@@ -582,7 +583,7 @@ const SimpleResultsTable = ({
                         window.open(`https://www.google.com/search?q=${searchQuery}`, '_blank');
                       }}
                       className="inline-flex items-center justify-center p-1.5 text-orange-600 hover:text-orange-900 hover:bg-orange-50 rounded-md transition-colors"
-                      title={`Buscar escopo/área de "${journal.journal}" no Google`}
+                      title={language === 'pt' ? `Buscar escopo/área de "${journal.journal}" no Google` : `Search scope/area of "${journal.journal}" on Google`}
                     >
                       <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
@@ -597,7 +598,7 @@ const SimpleResultsTable = ({
                         window.open(`https://www.google.com/search?q=${searchQuery}`, '_blank');
                       }}
                       className="inline-flex items-center justify-center p-1.5 text-purple-600 hover:text-purple-900 hover:bg-purple-50 rounded-md transition-colors"
-                      title={`Buscar diretrizes de tamanho/palavras de "${journal.journal}" no Google`}
+                      title={language === 'pt' ? `Buscar diretrizes de tamanho/palavras de "${journal.journal}" no Google` : `Search length/word guidelines for "${journal.journal}" on Google`}
                     >
                       <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
@@ -618,7 +619,7 @@ const SimpleResultsTable = ({
             onClick={() => setCurrentPage(prev => prev + 1)}
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >
-            Carregar mais 100 journals
+            {t('categories.loadMore')}
           </button>
         </div>
       )}

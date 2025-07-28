@@ -1,29 +1,18 @@
 version: '3.8'
 
 services:
-  journalscope-multidominio:
-    image: periodicos:3v
-    networks:
-      - iaprojetos
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.journalscope-multi.rule=Host(`periodicos.iaprojetos.com.br`) || Host(`periodicos.iatranscreve.com.br`)"
-      - "traefik.http.routers.journalscope-multi.entrypoints=websecure"
-      - "traefik.http.routers.journalscope-multi.tls.certresolver=letsencryptresolver"
-      - "traefik.http.services.journalscope-multi.loadbalancer.server.port=3000"
-      - "traefik.http.routers.journalscope-multi.tls.domains[0].main=periodicos.iaprojetos.com.br"
-      - "traefik.http.routers.journalscope-multi.tls.domains[1].main=periodicos.iatranscreve.com.br"
-      - "traefik.http.routers.journalscope-multi-http.rule=Host(`periodicos.iaprojetos.com.br`) || Host(`periodicos.iatranscreve.com.br`)"
-      - "traefik.http.routers.journalscope-multi-http.entrypoints=web"
-      - "traefik.http.routers.journalscope-multi-http.middlewares=redirect-to-https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+  journalscope:
+    image: periodicos:5v
+    container_name: journalscope-v5
+    ports:
+      - "8080:80"
     environment:
       - NODE_ENV=production
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
+      - VITE_APP_TITLE=JournalScope
+      - VITE_APP_VERSION=5.0.0
+    restart: unless-stopped
+    volumes:
+      - logs-nginx:/var/log/nginx
 
-networks:
-  iaprojetos:
-    external: true
+volumes:
+  logs-nginx:

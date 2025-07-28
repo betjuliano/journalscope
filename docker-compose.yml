@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # JournalScope - Aplicação Principal Atualizada (usando Traefik global existente)
   journalscope-multidominio:
-    image: periodicos:4v
+    image: periodicos:5v
     networks:
       - iaprojetos
     labels:

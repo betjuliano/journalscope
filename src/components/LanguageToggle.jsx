@@ -15,8 +15,8 @@ const LanguageToggle = ({ position = 'hero', className = '' }) => {
 
   const getAriaLabel = () => {
     return language === 'pt' 
-      ? 'Switch language to English' 
-      : 'Alternar idioma para português';
+      ? 'Alternar idioma para inglês' 
+      : 'Switch language to Portuguese';
   };
 
   const getButtonText = () => {

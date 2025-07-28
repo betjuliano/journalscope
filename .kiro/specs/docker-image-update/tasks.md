@@ -30,18 +30,28 @@
 
 
 
+
 - [ ] 4. Testar a imagem localmente
   - Executar a imagem em container local para validação
   - Verificar se a aplicação carrega com os 8,222 journals
   - Testar funcionalidades principais (busca, filtros, estatísticas)
 
 
+
   - _Requirements: 2.1, 2.2, 2.3_
 
 - [ ] 5. Atualizar arquivos de deploy
   - Modificar deploy.sh para usar a nova versão
+
+
+
+
   - Atualizar DEPLOY_INSTRUCTIONS.md com informações da versão 4v
   - Preparar documentação de rollback se necessário
+
+
+
+
   - _Requirements: 3.2, 3.3_
 
 - [ ] 6. Executar deploy em produção

@@ -64,8 +64,8 @@ export default {
       journal: 'Journal',
       abdc: 'ABDC',
       abs: 'ABS',
-      sjrQuartile: 'SJR Quartile',
-      jcrQuartile: 'JCR Quartile',
+      sjrQuartile: 'SJR Quartil',
+      jcrQuartile: 'JCR Quartil',
       qualis: 'Qualis',
       sjrHIndex: 'SJR H-Index'
     },
@@ -92,6 +92,7 @@ export default {
     showingResults: 'Mostrando {count} de {total} journals',
     filteredFrom: 'filtrados de {total} total',
     loadMore: 'Carregar mais resultados',
+    results: 'Resultados ({count} journals)',
     
     actionButtons: {
       expand: 'Expandir',

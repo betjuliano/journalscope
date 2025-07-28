@@ -10,20 +10,15 @@ const CACHE_VERSION = '1.0.0';
 const CORE_CACHE_FILES = [
   '/',
   '/index.html',
-  '/static/css/main.css',
-  '/static/js/main.js',
   '/manifest.json',
   '/favicon.ico',
-  '/favicon-192x192.png',
-  '/favicon-512x512.png'
+  '/favicon.svg'
 ];
 
-// Arquivos de dados (cache opcional)
+// Arquivos de dados (cache opcional) - removidos pois não existem
 const DATA_CACHE = 'journalscope-data-v1';
 const DATA_FILES = [
-  '/data/ABDC2022.xlsx',
-  '/data/ABS2024.xlsx',
-  '/data/Wiley.xlsx'
+  // Arquivos de dados serão adicionados dinamicamente quando disponíveis
 ];
 
 // URLs que sempre devem buscar da rede primeiro
@@ -54,23 +49,32 @@ self.addEventListener('install', (event) => {
   console.log('[SW] Installing Service Worker v' + CACHE_VERSION);
   
   event.waitUntil(
-    Promise.all([
-      // Cache dos arquivos core
-      caches.open(CACHE_NAME).then((cache) => {
-        console.log('[SW] Caching core files');
-        return cache.addAll(CORE_CACHE_FILES);
-      }),
+    caches.open(CACHE_NAME).then(async (cache) => {
+      console.log('[SW] Caching core files individually');
       
-      // Cache dos arquivos de dados (opcional)
-      caches.open(DATA_CACHE).then((cache) => {
-        console.log('[SW] Caching data files');
-        return cache.addAll(DATA_FILES).catch((error) => {
-          console.warn('[SW] Data files not found, skipping cache:', error);
-        });
-      })
-    ]).then(() => {
+      // Cache arquivos individualmente para evitar falha total
+      const cachePromises = CORE_CACHE_FILES.map(async (file) => {
+        try {
+          const response = await fetch(file);
+          if (response.ok) {
+            await cache.put(file, response);
+            console.log(`[SW] Cached: ${file}`);
+          } else {
+            console.warn(`[SW] Failed to fetch ${file}: ${response.status}`);
+          }
+        } catch (error) {
+          console.warn(`[SW] Error caching ${file}:`, error.message);
+        }
+      });
+      
+      // Aguardar todas as tentativas de cache (sem falhar se alguma der erro)
+      await Promise.allSettled(cachePromises);
+      
       console.log('[SW] Installation complete');
-      // Força a ativação imediata
+      return self.skipWaiting();
+    }).catch((error) => {
+      console.error('[SW] Cache opening failed:', error);
+      // Continuar mesmo com erro de cache
       return self.skipWaiting();
     })
   );
@@ -131,21 +135,30 @@ function getCacheStrategy(url) {
  * Cache First Strategy
  */
 async function cacheFirst(request) {
-  const cachedResponse = await caches.match(request);
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-  
   try {
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    
     const networkResponse = await fetch(request);
     if (networkResponse.ok) {
-      const cache = await caches.open(CACHE_NAME);
-      cache.put(request, networkResponse.clone());
+      try {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(request, networkResponse.clone());
+      } catch (cacheError) {
+        console.warn('[SW] Failed to cache response:', cacheError.message);
+        // Continue sem falhar
+      }
     }
     return networkResponse;
   } catch (error) {
-    console.warn('[SW] Cache First failed:', error);
-    throw error;
+    console.warn('[SW] Cache First failed:', error.message);
+    // Retornar uma resposta de erro em vez de throw
+    return new Response('Network error', { 
+      status: 408, 
+      statusText: 'Request Timeout' 
+    });
   }
 }
 
@@ -156,17 +169,31 @@ async function networkFirst(request) {
   try {
     const networkResponse = await fetch(request);
     if (networkResponse.ok) {
-      const cache = await caches.open(CACHE_NAME);
-      cache.put(request, networkResponse.clone());
+      try {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(request, networkResponse.clone());
+      } catch (cacheError) {
+        console.warn('[SW] Failed to cache response:', cacheError.message);
+        // Continue sem falhar
+      }
     }
     return networkResponse;
   } catch (error) {
-    console.warn('[SW] Network failed, trying cache:', error);
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
+    console.warn('[SW] Network failed, trying cache:', error.message);
+    try {
+      const cachedResponse = await caches.match(request);
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+    } catch (cacheError) {
+      console.warn('[SW] Cache lookup failed:', cacheError.message);
     }
-    throw error;
+    
+    // Retornar uma resposta de erro em vez de throw
+    return new Response('Network and cache failed', { 
+      status: 503, 
+      statusText: 'Service Unavailable' 
+    });
   }
 }
 

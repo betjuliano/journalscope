@@ -92,6 +92,7 @@ export default {
     showingResults: 'Showing {count} of {total} journals',
     filteredFrom: 'filtered from {total} total',
     loadMore: 'Load more results',
+    results: 'Results ({count} journals)',
     
     actionButtons: {
       expand: 'Expand',

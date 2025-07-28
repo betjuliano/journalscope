@@ -95,10 +95,10 @@ const JournalSearchApp = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="journalscope-container min-h-screen">
       <div className="container mx-auto px-4 py-8">
         {/* Hero Section */}
-        <div className="text-center mb-8 relative">
+        <div className="hero-section text-center mb-8 relative">
           {/* Language Toggle - positioned in top-right */}
           <div className="absolute top-0 right-0">
             <LanguageToggle position="hero" />
@@ -106,15 +106,15 @@ const JournalSearchApp = () => {
           
           <div className="flex items-center justify-center gap-3 mb-6">
             <Database className="h-10 w-10 text-indigo-600" />
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="hero-title">
               JournalScope
             </h1>
           </div>
           <div className="max-w-3xl mx-auto mb-6">
-            <p className="text-xl text-gray-700 mb-3 font-medium">
+            <p className="hero-subtitle">
               {t('hero.subtitle')}
             </p>
-            <p className="text-gray-600 leading-relaxed">
+            <p className="hero-description">
               {t('hero.description')}
             </p>
           </div>

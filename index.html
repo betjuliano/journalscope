@@ -298,9 +298,10 @@
   <!-- Analytics (apenas em produção) -->
   <!-- Adicionar código do Google Analytics ou outra ferramenta aqui -->
   
-  <!-- Service Worker Registration -->
+  <!-- Service Worker Registration - Temporarily Disabled -->
   <script type="module">
-    if ('serviceWorker' in navigator && import.meta.env.PROD) {
+    // Service Worker temporarily disabled to prevent cache issues
+    if (false && 'serviceWorker' in navigator && import.meta.env.PROD) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
           .then((registration) => {
