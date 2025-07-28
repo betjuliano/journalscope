@@ -15,6 +15,16 @@ const CORE_CACHE_FILES = [
   '/favicon.svg'
 ];
 
+// Arquivos CSS e JS que devem ser cacheados
+const STATIC_ASSETS = [
+  // CSS files
+  '/assets/components-COc7sBw9.css',
+  // JS files principais
+  '/assets/index-Syz3CJDV.js',
+  '/assets/vendor-CPnNXX10.js',
+  '/assets/react-vendor-DWfrqRAy.js'
+];
+
 // Arquivos de dados (cache opcional) - removidos pois não existem
 const DATA_CACHE = 'journalscope-data-v1';
 const DATA_FILES = [
@@ -49,34 +59,66 @@ self.addEventListener('install', (event) => {
   console.log('[SW] Installing Service Worker v' + CACHE_VERSION);
   
   event.waitUntil(
-    caches.open(CACHE_NAME).then(async (cache) => {
-      console.log('[SW] Caching core files individually');
-      
-      // Cache arquivos individualmente para evitar falha total
-      const cachePromises = CORE_CACHE_FILES.map(async (file) => {
-        try {
-          const response = await fetch(file);
-          if (response.ok) {
-            await cache.put(file, response);
-            console.log(`[SW] Cached: ${file}`);
-          } else {
-            console.warn(`[SW] Failed to fetch ${file}: ${response.status}`);
+    (async () => {
+      try {
+        const cache = await caches.open(CACHE_NAME);
+        console.log('[SW] Caching core files individually');
+        
+        // Cache apenas arquivos que realmente existem
+        const validFiles = [];
+        
+        for (const file of CORE_CACHE_FILES) {
+          try {
+            const response = await fetch(file, { 
+              method: 'HEAD',
+              cache: 'no-cache'
+            });
+            
+            if (response.ok) {
+              validFiles.push(file);
+              console.log(`[SW] File exists: ${file}`);
+            } else {
+              console.warn(`[SW] File not found: ${file} (${response.status})`);
+            }
+          } catch (error) {
+            console.warn(`[SW] Cannot check file ${file}:`, error.message);
           }
-        } catch (error) {
-          console.warn(`[SW] Error caching ${file}:`, error.message);
         }
-      });
-      
-      // Aguardar todas as tentativas de cache (sem falhar se alguma der erro)
-      await Promise.allSettled(cachePromises);
-      
-      console.log('[SW] Installation complete');
-      return self.skipWaiting();
-    }).catch((error) => {
-      console.error('[SW] Cache opening failed:', error);
-      // Continuar mesmo com erro de cache
-      return self.skipWaiting();
-    })
+        
+        // Cache apenas os arquivos válidos
+        if (validFiles.length > 0) {
+          try {
+            await cache.addAll(validFiles);
+            console.log(`[SW] Successfully cached ${validFiles.length} files`);
+          } catch (addAllError) {
+            console.warn('[SW] addAll failed, caching individually:', addAllError.message);
+            
+            // Fallback: cache individualmente
+            for (const file of validFiles) {
+              try {
+                const response = await fetch(file);
+                if (response.ok) {
+                  await cache.put(file, response);
+                  console.log(`[SW] Individually cached: ${file}`);
+                }
+              } catch (individualError) {
+                console.warn(`[SW] Failed to cache ${file}:`, individualError.message);
+              }
+            }
+          }
+        } else {
+          console.warn('[SW] No valid files found to cache');
+        }
+        
+        console.log('[SW] Installation complete');
+        return self.skipWaiting();
+        
+      } catch (error) {
+        console.error('[SW] Installation failed:', error);
+        // Continuar mesmo com erro de cache
+        return self.skipWaiting();
+      }
+    })()
   );
 });
 

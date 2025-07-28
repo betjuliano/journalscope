@@ -298,18 +298,16 @@
   <!-- Analytics (apenas em produção) -->
   <!-- Adicionar código do Google Analytics ou outra ferramenta aqui -->
   
-  <!-- Service Worker Registration - Temporarily Disabled -->
+  <!-- Service Worker Registration - Disabled -->
   <script type="module">
-    // Service Worker temporarily disabled to prevent cache issues
-    if (false && 'serviceWorker' in navigator && import.meta.env.PROD) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then((registration) => {
-            console.log('SW registered: ', registration);
-          })
-          .catch((registrationError) => {
-            console.log('SW registration failed: ', registrationError);
-          });
+    // Service Worker disabled to prevent cache issues
+    if ('serviceWorker' in navigator) {
+      // Unregister any existing service workers
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+          registration.unregister();
+          console.log('SW unregistered:', registration);
+        }
       });
     }
   </script>

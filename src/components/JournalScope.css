@@ -1,52 +1,41 @@
 /* JournalScope - CSS Otimizado para Layout Moderno */
 
-/* Reset e base */
-* {
-  box-sizing: border-box;
-}
-
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  line-height: 1.6;
-  color: #1f2937;
-  background-color: #f8fafc;
-}
-
-/* Container principal */
+/* Garantir que o CSS seja aplicado com !important para sobrescrever Tailwind */
 .journalscope-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f0f7ff 0%, #e0f0ff 100%);
+  min-height: 100vh !important;
+  background: linear-gradient(135deg, #f0f7ff 0%, #e0f0ff 100%) !important;
 }
 
-/* Hero section */
+/* Hero section com estilos forçados */
 .hero-section {
-  text-align: center;
-  margin-bottom: 2rem;
-  position: relative;
+  text-align: center !important;
+  margin-bottom: 2rem !important;
+  position: relative !important;
 }
 
 .hero-title {
-  font-size: 3rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 1rem;
+  font-size: 3rem !important;
+  font-weight: 800 !important;
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  margin-bottom: 1rem !important;
+  display: block !important;
 }
 
 .hero-subtitle {
-  font-size: 1.25rem;
-  color: #374151;
-  font-weight: 500;
-  margin-bottom: 0.75rem;
+  font-size: 1.25rem !important;
+  color: #374151 !important;
+  font-weight: 500 !important;
+  margin-bottom: 0.75rem !important;
 }
 
 .hero-description {
-  color: #6b7280;
-  max-width: 48rem;
-  margin: 0 auto 2rem;
-  line-height: 1.7;
+  color: #6b7280 !important;
+  max-width: 48rem !important;
+  margin: 0 auto 2rem !important;
+  line-height: 1.7 !important;
 }
 
 /* Stats cards */
