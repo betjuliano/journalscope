@@ -71,29 +71,17 @@ root.render(
   </React.StrictMode>
 );
 
-// Registrar Service Worker (apenas em produção)
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+// Service Worker DESABILITADO - Remover registros existentes
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then((registration) => {
-        console.log('SW registered: ', registration);
-        
-        // Verificar por atualizações
-        registration.addEventListener('updatefound', () => {
-          const newWorker = registration.installing;
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // Nova versão disponível
-              if (window.confirm('Nova versão disponível! Recarregar para atualizar?')) {
-                window.location.reload();
-              }
-            }
-          });
+    // Desregistrar todos os Service Workers existentes
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+      for(let registration of registrations) {
+        registration.unregister().then(function(boolean) {
+          console.log('SW unregistered:', boolean);
         });
-      })
-      .catch((registrationError) => {
-        console.log('SW registration failed: ', registrationError);
-      });
+      }
+    });
   });
 }
 
