@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useI18n } from '../contexts/I18nContext';
 
 /**
@@ -7,10 +7,17 @@ import { useI18n } from '../contexts/I18nContext';
  */
 const LanguageToggle = ({ position = 'hero', className = '' }) => {
   const { language, setLanguage, isLoading } = useI18n();
+  const [isChangingLanguage, setIsChangingLanguage] = useState(false);
 
   const handleLanguageChange = () => {
+    setIsChangingLanguage(true);
     const newLanguage = language === 'pt' ? 'en' : 'pt';
     setLanguage(newLanguage);
+    
+    // Forçar refresh da página para garantir que a tradução seja aplicada corretamente
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
   };
 
   const getAriaLabel = () => {
@@ -51,17 +58,17 @@ const LanguageToggle = ({ position = 'hero', className = '' }) => {
   return (
     <button
       onClick={handleLanguageChange}
-      disabled={isLoading}
+      disabled={isLoading || isChangingLanguage}
       className={`${baseClasses} ${positionClasses[position]} ${className}`}
       aria-label={getAriaLabel()}
       aria-pressed={language === 'en'}
       role="switch"
       title={getAriaLabel()}
     >
-      {isLoading ? (
+      {isLoading || isChangingLanguage ? (
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"></div>
-          <span className="sr-only">Loading...</span>
+          <span className="sr-only">{isChangingLanguage ? 'Changing language...' : 'Loading...'}</span>
         </div>
       ) : (
         <span className="font-bold">{getButtonText()}</span>
