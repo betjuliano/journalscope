@@ -17,6 +17,8 @@ import { useI18n } from '../contexts/I18nContext';
 const SearchFilters = ({
   searchTerm,
   setSearchTerm,
+  issnSearch,
+  setIssnSearch,
   filterABDC,
   setFilterABDC,
   filterABS,
@@ -87,7 +89,31 @@ const SearchFilters = ({
   };
 
   // Check if there are active filters
-  const hasActiveFilters = searchTerm || filterABDC || filterABS || filterWiley;
+  const hasActiveFilters = searchTerm || issnSearch || filterABDC || filterABS || filterWiley;
+
+  // Validação de ISSN
+  const isValidISSNFormat = (issn) => {
+    return /^\d{4}-\d{3}[0-9X]$/.test(issn);
+  };
+
+  // Normalização de ISSN para busca
+  const normalizeISSNForSearch = (issn) => {
+    if (!issn) return '';
+    return issn.toString().replace(/[^0-9X]/g, '').toUpperCase();
+  };
+
+  // Handle da busca por ISSN
+  const handleIssnChange = (value) => {
+    // Permitir apenas números e X, com formatação automática
+    let cleaned = value.replace(/[^0-9X]/g, '').toUpperCase();
+    
+    // Adicionar hífen automaticamente
+    if (cleaned.length > 4 && !cleaned.includes('-')) {
+      cleaned = cleaned.substring(0, 4) + '-' + cleaned.substring(4);
+    }
+    
+    setIssnSearch(cleaned);
+  };
 
   // Presets de filtros
   const filterPresets = [
@@ -252,6 +278,37 @@ const SearchFilters = ({
                 </button>
               ))}
             </div>
+          )}
+        </div>
+
+        {/* Campo de Busca por ISSN */}
+        <div className="relative">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {language === 'en' ? 'ISSN Search' : 'Busca por ISSN'}
+          </label>
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="XXXX-XXXX"
+              className={`input pl-10 pr-10 ${issnSearch && !isValidISSNFormat(issnSearch) ? 'border-red-300 focus:border-red-500' : ''}`}
+              value={issnSearch}
+              onChange={(e) => handleIssnChange(e.target.value)}
+              maxLength={9}
+            />
+            {issnSearch && (
+              <button
+                onClick={() => setIssnSearch('')}
+                className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          {issnSearch && !isValidISSNFormat(issnSearch) && (
+            <p className="text-xs text-red-600 mt-1">
+              {language === 'en' ? 'Invalid ISSN format. Use XXXX-XXXX' : 'Formato ISSN inválido. Use XXXX-XXXX'}
+            </p>
           )}
         </div>
       </div>

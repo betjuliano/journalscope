@@ -23,6 +23,7 @@ const useEmbeddedData = () => {
 
   // Estados dos filtros
   const [searchTerm, setSearchTerm] = useState('');
+  const [issnSearch, setIssnSearch] = useState('');
   const [filterABDC, setFilterABDC] = useState('');
   const [filterABS, setFilterABS] = useState('');
   const [filterWiley, setFilterWiley] = useState(false);
@@ -75,11 +76,33 @@ const useEmbeddedData = () => {
   }, []);
 
   /**
+   * Valida formato ISSN XXXX-XXXX
+   */
+  const isValidISSNFormat = useCallback((issn) => {
+    return /^\d{4}-\d{3}[0-9X]$/.test(issn);
+  }, []);
+
+  /**
+   * Normaliza ISSN para busca
+   */
+  const normalizeISSNForSearch = useCallback((issn) => {
+    if (!issn) return '';
+    return issn.toString().replace(/[^0-9X]/g, '').toUpperCase();
+  }, []);
+
+  /**
    * Termo de busca processado
    */
   const processedSearchTerm = useMemo(() => {
     return searchTerm ? searchTerm.toLowerCase().trim() : '';
   }, [searchTerm]);
+
+  /**
+   * ISSN de busca processado
+   */
+  const processedIssnSearch = useMemo(() => {
+    return issnSearch ? normalizeISSNForSearch(issnSearch) : '';
+  }, [issnSearch, normalizeISSNForSearch]);
 
   /**
    * Dados filtrados com otimização simples
@@ -90,9 +113,17 @@ const useEmbeddedData = () => {
     const startTime = performance.now();
     
     const filtered = journalsData.filter(journal => {
-      // Filtro de busca
+      // Filtro de busca por nome
       if (processedSearchTerm && !journal.journal.toLowerCase().includes(processedSearchTerm)) {
         return false;
+      }
+      
+      // Filtro de busca por ISSN
+      if (processedIssnSearch) {
+        const journalIssn = normalizeISSNForSearch(journal.issn || '');
+        if (!journalIssn.includes(processedIssnSearch)) {
+          return false;
+        }
       }
       
       // Filtros específicos
@@ -112,7 +143,7 @@ const useEmbeddedData = () => {
     }
 
     return filtered;
-  }, [journalsData, processedSearchTerm, filterABDC, filterABS, filterSJR, filterWiley]);
+  }, [journalsData, processedSearchTerm, processedIssnSearch, filterABDC, filterABS, filterSJR, filterWiley, normalizeISSNForSearch]);
 
   /**
    * Estatísticas dos dados filtrados
@@ -133,8 +164,40 @@ const useEmbeddedData = () => {
       };
     }
 
+    // Normalização e validação de ISSN
+    const normalizeISSN = (issn) => (issn || '').toUpperCase().trim();
+    const isValidISSN = (issn) => {
+      const s = normalizeISSN(issn);
+      const m = s.match(/^\d{4}-\d{3}[0-9X]$/);
+      if (!m) return false;
+      const digits = s.replace('-', '').split('');
+      const weights = [8,7,6,5,4,3,2];
+      let sum = 0;
+      for (let i = 0; i < 7; i++) sum += parseInt(digits[i], 10) * weights[i];
+      const remainder = sum % 11;
+      const check = (11 - remainder);
+      const checkChar = check === 10 ? 'X' : (check === 11 ? '0' : String(check));
+      return digits[7] === checkChar;
+    };
+
+    // Deduplicar por ISSN válido
+    const uniqueByIssn = new Map();
+    const aggregated = [];
+    for (const j of filteredData) {
+      const issn = normalizeISSN(j.issn);
+      const key = isValidISSN(issn) ? issn : null;
+      if (key && !uniqueByIssn.has(key)) {
+        uniqueByIssn.set(key, j);
+        aggregated.push(j);
+      }
+      if (!key) {
+        // sem ISSN válido, contar individualmente
+        aggregated.push(j);
+      }
+    }
+
     const stats = {
-      total: filteredData.length,
+      total: aggregated.length,
       withABDC: 0,
       withABS: 0,
       withWiley: 0,
@@ -145,8 +208,8 @@ const useEmbeddedData = () => {
       abdcDistribution: {},
       absDistribution: {}
     };
-    
-    filteredData.forEach(journal => {
+
+    aggregated.forEach(journal => {
       if (journal.abdc) stats.withABDC++;
       if (journal.abs) stats.withABS++;
       if (journal.wileySubject) stats.withWiley++;
@@ -154,8 +217,7 @@ const useEmbeddedData = () => {
       if (journal.jcr) stats.withJCR++;
       if (journal.citeScore) stats.withCiteScore++;
       if (journal.predatory) stats.withPredatory++;
-      
-      // Distribuições
+
       if (journal.abdc) {
         stats.abdcDistribution[journal.abdc] = (stats.abdcDistribution[journal.abdc] || 0) + 1;
       }
@@ -163,7 +225,7 @@ const useEmbeddedData = () => {
         stats.absDistribution[journal.abs] = (stats.absDistribution[journal.abs] || 0) + 1;
       }
     });
-    
+
     return stats;
   }, [filteredData]);
 
@@ -247,6 +309,7 @@ const useEmbeddedData = () => {
    */
   const clearAllFilters = useCallback(() => {
     setSearchTerm('');
+    setIssnSearch('');
     setFilterABDC('');
     setFilterABS('');
     setFilterWiley(false);
@@ -259,6 +322,7 @@ const useEmbeddedData = () => {
   const applyPresetFilter = useCallback((preset) => {
     // Limpar filtros primeiro
     setSearchTerm('');
+    setIssnSearch('');
     setFilterABDC('');
     setFilterABS('');
     setFilterWiley(false);
@@ -318,6 +382,8 @@ const useEmbeddedData = () => {
     // Estados dos filtros
     searchTerm,
     setSearchTerm,
+    issnSearch,
+    setIssnSearch,
     filterABDC,
     setFilterABDC,
     filterABS,
@@ -334,6 +400,10 @@ const useEmbeddedData = () => {
     findSimilarJournals,
     exportToCSV,
     
+    // Funções de ISSN
+    isValidISSNFormat,
+    normalizeISSNForSearch,
+    
     // Funções de filtros
     clearAllFilters,
     applyPresetFilter,
@@ -342,7 +412,7 @@ const useEmbeddedData = () => {
     reloadData,
     
     // Utilitários
-    hasFiltersApplied: !!(searchTerm || filterABDC || filterABS || filterWiley),
+    hasFiltersApplied: !!(searchTerm || issnSearch || filterABDC || filterABS || filterWiley),
     isEmpty: !journalsData || journalsData.length === 0,
     hasResults: filteredData && filteredData.length > 0,
     isEmbedded: true

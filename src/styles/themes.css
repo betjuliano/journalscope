@@ -1,0 +1,217 @@
+/* JournalScope - Variáveis CSS para Temas Light e Dark */
+
+/* Tema Light (padrão) */
+:root {
+  /* Cores de fundo */
+  --js-bg-primary: #f0f7ff;
+  --js-bg-secondary: #e0f0ff;
+  --js-bg-card: #ffffff;
+  --js-bg-card-hover: #f9fafb;
+  --js-bg-input: #ffffff;
+  --js-bg-overlay: rgba(0, 0, 0, 0.5);
+  
+  /* Cores de texto */
+  --js-text-primary: #1f2937;
+  --js-text-secondary: #374151;
+  --js-text-muted: #6b7280;
+  --js-text-inverse: #ffffff;
+  
+  /* Cores de borda */
+  --js-border-primary: #e5e7eb;
+  --js-border-secondary: #f3f4f6;
+  --js-border-focus: #2563eb;
+  
+  /* Cores de sombra */
+  --js-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --js-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --js-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  
+  /* Cores primárias */
+  --js-primary: #2563eb;
+  --js-primary-hover: #1d4ed8;
+  --js-secondary: #7c3aed;
+  --js-secondary-hover: #6d28d9;
+  
+  /* Cores de status */
+  --js-success: #059669;
+  --js-success-bg: #d1fae5;
+  --js-warning: #d97706;
+  --js-warning-bg: #fef3c7;
+  --js-error: #dc2626;
+  --js-error-bg: #fee2e2;
+  --js-info: #2563eb;
+  --js-info-bg: #dbeafe;
+  
+  /* Cores de classificação ABDC */
+  --js-abdc-a-star: #166534;
+  --js-abdc-a-star-bg: #dcfce7;
+  --js-abdc-a: #1e40af;
+  --js-abdc-a-bg: #dbeafe;
+  --js-abdc-b: #92400e;
+  --js-abdc-b-bg: #fef3c7;
+  --js-abdc-c: #991b1b;
+  --js-abdc-c-bg: #fee2e2;
+  
+  /* Cores de classificação ABS */
+  --js-abs-4-star: #166534;
+  --js-abs-4-star-bg: #dcfce7;
+  --js-abs-4: #1e40af;
+  --js-abs-4-bg: #dbeafe;
+  --js-abs-3: #92400e;
+  --js-abs-3-bg: #fef3c7;
+  --js-abs-2: #9a3412;
+  --js-abs-2-bg: #fed7aa;
+  --js-abs-1: #991b1b;
+  --js-abs-1-bg: #fee2e2;
+  
+  /* Cores de quartis */
+  --js-q1: #166534;
+  --js-q1-bg: #dcfce7;
+  --js-q2: #1e40af;
+  --js-q2-bg: #dbeafe;
+  --js-q3: #92400e;
+  --js-q3-bg: #fef3c7;
+  --js-q4: #991b1b;
+  --js-q4-bg: #fee2e2;
+  
+  /* Transparências */
+  --js-glass-bg: rgba(255, 255, 255, 0.9);
+  --js-glass-border: rgba(255, 255, 255, 0.2);
+}
+
+/* Tema Dark */
+[data-theme="dark"] {
+  /* Cores de fundo */
+  --js-bg-primary: #0f172a;
+  --js-bg-secondary: #1e293b;
+  --js-bg-card: #1e293b;
+  --js-bg-card-hover: #334155;
+  --js-bg-input: #334155;
+  --js-bg-overlay: rgba(0, 0, 0, 0.7);
+  
+  /* Cores de texto */
+  --js-text-primary: #f1f5f9;
+  --js-text-secondary: #cbd5e1;
+  --js-text-muted: #94a3b8;
+  --js-text-inverse: #0f172a;
+  
+  /* Cores de borda */
+  --js-border-primary: #334155;
+  --js-border-secondary: #475569;
+  --js-border-focus: #3b82f6;
+  
+  /* Cores de sombra */
+  --js-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --js-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --js-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  
+  /* Cores primárias (ajustadas para dark) */
+  --js-primary: #3b82f6;
+  --js-primary-hover: #2563eb;
+  --js-secondary: #8b5cf6;
+  --js-secondary-hover: #7c3aed;
+  
+  /* Cores de status (ajustadas para dark) */
+  --js-success: #10b981;
+  --js-success-bg: #064e3b;
+  --js-warning: #f59e0b;
+  --js-warning-bg: #451a03;
+  --js-error: #ef4444;
+  --js-error-bg: #450a0a;
+  --js-info: #3b82f6;
+  --js-info-bg: #1e3a8a;
+  
+  /* Cores de classificação ABDC (ajustadas para dark) */
+  --js-abdc-a-star: #22c55e;
+  --js-abdc-a-star-bg: #064e3b;
+  --js-abdc-a: #3b82f6;
+  --js-abdc-a-bg: #1e3a8a;
+  --js-abdc-b: #f59e0b;
+  --js-abdc-b-bg: #451a03;
+  --js-abdc-c: #ef4444;
+  --js-abdc-c-bg: #450a0a;
+  
+  /* Cores de classificação ABS (ajustadas para dark) */
+  --js-abs-4-star: #22c55e;
+  --js-abs-4-star-bg: #064e3b;
+  --js-abs-4: #3b82f6;
+  --js-abs-4-bg: #1e3a8a;
+  --js-abs-3: #f59e0b;
+  --js-abs-3-bg: #451a03;
+  --js-abs-2: #f97316;
+  --js-abs-2-bg: #431407;
+  --js-abs-1: #ef4444;
+  --js-abs-1-bg: #450a0a;
+  
+  /* Cores de quartis (ajustadas para dark) */
+  --js-q1: #22c55e;
+  --js-q1-bg: #064e3b;
+  --js-q2: #3b82f6;
+  --js-q2-bg: #1e3a8a;
+  --js-q3: #f59e0b;
+  --js-q3-bg: #451a03;
+  --js-q4: #ef4444;
+  --js-q4-bg: #450a0a;
+  
+  /* Transparências */
+  --js-glass-bg: rgba(30, 41, 59, 0.9);
+  --js-glass-border: rgba(51, 65, 85, 0.3);
+}
+
+/* Aplicar variáveis aos elementos */
+.journalscope-container {
+  background: var(--js-bg-primary);
+  color: var(--js-text-primary);
+}
+
+.hero-title {
+  color: var(--js-primary);
+}
+
+.stat-card {
+  background: var(--js-glass-bg);
+  border: 1px solid var(--js-glass-border);
+  color: var(--js-text-primary);
+}
+
+.card {
+  background: var(--js-bg-card);
+  color: var(--js-text-primary);
+  border: 1px solid var(--js-border-primary);
+}
+
+.card-header {
+  background: var(--js-bg-card-hover);
+  border-bottom: 1px solid var(--js-border-primary);
+}
+
+.filter-input,
+.filter-select,
+.search-input {
+  background: var(--js-bg-input);
+  color: var(--js-text-primary);
+  border: 1px solid var(--js-border-primary);
+}
+
+.filter-input:focus,
+.filter-select:focus,
+.search-input:focus {
+  border-color: var(--js-border-focus);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.language-toggle {
+  background: var(--js-glass-bg);
+  border: 1px solid var(--js-glass-border);
+  color: var(--js-text-primary);
+}
+
+/* Transições suaves para mudança de tema */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Desabilitar transições durante mudança de tema para evitar flash */
+.theme-transitioning * {
+  transition: none !important;
+}

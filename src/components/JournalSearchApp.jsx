@@ -7,13 +7,17 @@ import {
   Database, 
   RefreshCw,
   X,
-  Clock
+  Clock,
+  FileText
 } from 'lucide-react';
 import { useEmbeddedData } from '../../hooks';
 import { exportAsCSV, exportAsExcel } from '../../utils';
+import { ThemeProvider } from '../contexts/ThemeContext';
 import PerformanceMonitor from './PerformanceMonitor';
 import SimpleResultsTable from './SimpleResultsTable';
 import LanguageToggle from './LanguageToggle';
+import ThemeToggle from './ThemeToggle';
+import SubSystemContainer from './SubSystemContainer';
 import { useI18n } from '../contexts/I18nContext';
 
 const JournalSearchApp = () => {
@@ -30,6 +34,8 @@ const JournalSearchApp = () => {
     dataSource,
     searchTerm,
     setSearchTerm,
+    issnSearch,
+    setIssnSearch,
     filterABDC,
     setFilterABDC,
     filterABS,
@@ -41,16 +47,21 @@ const JournalSearchApp = () => {
     showStats,
     setShowStats,
     stats,
+    filteredStats,
     reloadData,
     exportToCSV,
     clearAllFilters,
-    applyPresetFilter
+    applyPresetFilter,
+    isValidISSNFormat,
+    normalizeISSNForSearch
   } = useEmbeddedData();
 
   // Estados adicionais para melhorias
   const [searchHistory, setSearchHistory] = useState([]);
   const [showSearchHistory, setShowSearchHistory] = useState(false);
   const [excludePredatory, setExcludePredatory] = useState(false);
+  const [showSubSystem, setShowSubSystem] = useState(false);
+  const [selectedJournalsForSub, setSelectedJournalsForSub] = useState([]);
 
   // Carregar histórico do localStorage
   useEffect(() => {
@@ -94,14 +105,29 @@ const JournalSearchApp = () => {
     setShowSearchHistory(false);
   };
 
+  // Função para receber periódicos selecionados e abrir o SUB
+  const handleSendToSub = (journals) => {
+    setSelectedJournalsForSub(journals);
+    setShowSubSystem(true);
+  };
+
   return (
-    <div className="journalscope-container min-h-screen">
+    <ThemeProvider>
+      <div className="journalscope-container min-h-screen">
       <div className="container mx-auto px-4 py-8">
         {/* Hero Section */}
         <div className="hero-section text-center mb-8 relative">
-          {/* Language Toggle - positioned in top-right */}
-          <div className="absolute top-0 right-0">
+          {/* Language Toggle e Botão SUB - positioned in top-right */}
+          <div className="absolute top-0 right-0 flex items-center gap-3">
+            <button
+              onClick={() => setShowSubSystem(true)}
+              className="inline-flex items-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+            >
+              <FileText className="h-4 w-4" />
+              {language === 'pt' ? 'SUB' : 'SUB'}
+            </button>
             <LanguageToggle position="hero" />
+            <ThemeToggle position="hero" />
           </div>
           
           <div className="flex items-center justify-center gap-3 mb-6">
@@ -121,39 +147,39 @@ const JournalSearchApp = () => {
           
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-7 gap-4 max-w-5xl mx-auto mb-6">
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-sm border border-white/20">
-              <div className="text-2xl font-bold text-indigo-600">{stats.total}</div>
-              <div className="text-xs text-gray-600 font-medium">{t('stats.totalJournals')}</div>
+            <div className="stat-card rounded-lg p-3 shadow-sm">
+              <div className="text-2xl font-bold text-indigo-600">{filteredStats.total}</div>
+              <div className="text-xs font-medium" style={{color: 'var(--js-text-muted)'}}>{t('stats.totalJournals')}</div>
             </div>
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-sm border border-white/20">
-              <div className="text-2xl font-bold text-blue-600">{stats.withABDC}</div>
-              <div className="text-xs text-gray-600 font-medium">{t('stats.withABDC')}</div>
+            <div className="stat-card rounded-lg p-3 shadow-sm">
+              <div className="text-2xl font-bold text-blue-600">{filteredStats.withABDC}</div>
+              <div className="text-xs font-medium" style={{color: 'var(--js-text-muted)'}}>{t('stats.withABDC')}</div>
             </div>
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-sm border border-white/20">
-              <div className="text-2xl font-bold text-green-600">{stats.withABS}</div>
-              <div className="text-xs text-gray-600 font-medium">{t('stats.withABS')}</div>
+            <div className="stat-card rounded-lg p-3 shadow-sm">
+              <div className="text-2xl font-bold text-green-600">{filteredStats.withABS}</div>
+              <div className="text-xs font-medium" style={{color: 'var(--js-text-muted)'}}>{t('stats.withABS')}</div>
             </div>
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-sm border border-white/20">
-              <div className="text-2xl font-bold text-purple-600">{stats.withJCR}</div>
-              <div className="text-xs text-gray-600 font-medium">{t('stats.withJCR')}</div>
+            <div className="stat-card rounded-lg p-3 shadow-sm">
+              <div className="text-2xl font-bold text-purple-600">{filteredStats.withJCR}</div>
+              <div className="text-xs font-medium" style={{color: 'var(--js-text-muted)'}}>{t('stats.withJCR')}</div>
             </div>
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-sm border border-white/20">
-              <div className="text-2xl font-bold text-orange-600">{stats.withSJR}</div>
-              <div className="text-xs text-gray-600 font-medium">{t('stats.withSJR')}</div>
+            <div className="stat-card rounded-lg p-3 shadow-sm">
+              <div className="text-2xl font-bold text-orange-600">{filteredStats.withSJR}</div>
+              <div className="text-xs font-medium" style={{color: 'var(--js-text-muted)'}}>{t('stats.withSJR')}</div>
             </div>
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-sm border border-white/20">
-              <div className="text-2xl font-bold text-red-600">{stats.withCiteScore}</div>
-              <div className="text-xs text-gray-600 font-medium">{t('stats.withCiteScore')}</div>
+            <div className="stat-card rounded-lg p-3 shadow-sm">
+              <div className="text-2xl font-bold text-red-600">{filteredStats.withCiteScore}</div>
+              <div className="text-xs font-medium" style={{color: 'var(--js-text-muted)'}}>{t('stats.withCiteScore')}</div>
             </div>
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-sm border border-white/20">
-              <div className="text-2xl font-bold text-red-800">{stats.withPredatory}</div>
-              <div className="text-xs text-gray-600 font-medium">{t('stats.withPredatory')}</div>
+            <div className="stat-card rounded-lg p-3 shadow-sm">
+              <div className="text-2xl font-bold text-red-800">{filteredStats.withPredatory}</div>
+              <div className="text-xs font-medium" style={{color: 'var(--js-text-muted)'}}>{t('stats.withPredatory')}</div>
             </div>
           </div>
         </div>
 
         {/* Filtros Rápidos */}
-        <div className="bg-white rounded-lg shadow-lg p-4 mb-6">
+        <div className="card rounded-lg shadow-lg p-4 mb-6">
           <div className="flex flex-wrap gap-2 justify-center">
             <button
               onClick={() => handlePresetFilter('top-tier')}
@@ -208,19 +234,19 @@ const JournalSearchApp = () => {
         </div>
 
         {/* Controles de Busca e Filtros */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div className="card rounded-lg shadow-lg p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
             {/* Campo de Busca com Histórico */}
             <div className="lg:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium mb-2" style={{color: 'var(--js-text-secondary)'}}>
                 {t('filters.search.label')}
               </label>
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-3 h-4 w-4" style={{color: 'var(--js-text-muted)'}} />
                 <input
                   type="text"
                   placeholder={t('filters.search.placeholder')}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="search-input w-full pl-10 pr-4 py-2 rounded-lg"
                   value={searchTerm}
                   onChange={(e) => handleSearchTermChange(e.target.value)}
                   onFocus={() => setShowSearchHistory(true)}
@@ -228,7 +254,8 @@ const JournalSearchApp = () => {
                 {searchTerm && (
                   <button
                     onClick={() => setSearchTerm('')}
-                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-3 hover:opacity-70"
+                    style={{color: 'var(--js-text-muted)'}}
                   >
                     <X size={16} />
                   </button>
@@ -236,17 +263,20 @@ const JournalSearchApp = () => {
                 
                 {/* Histórico de Busca */}
                 {showSearchHistory && searchHistory && searchHistory.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
-                    <div className="p-2 border-b border-gray-100 text-xs text-gray-500 font-medium">
+                  <div className="card absolute z-50 w-full mt-1 rounded-lg shadow-lg">
+                    <div className="p-2 text-xs font-medium" style={{color: 'var(--js-text-muted)', borderBottom: '1px solid var(--js-border-primary)'}}>
                       {t('filters.search.history')}
                     </div>
                     {searchHistory.map((term, index) => (
                       <button
                         key={index}
                         onClick={() => handleSearchTermChange(term)}
-                        className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center space-x-2 text-sm"
+                        className="w-full px-3 py-2 text-left flex items-center space-x-2 text-sm"
+                        style={{color: 'var(--js-text-primary)'}}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--js-bg-card-hover)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                       >
-                        <Clock size={14} className="text-gray-400" />
+                        <Clock size={14} style={{color: 'var(--js-text-muted)'}} />
                         <span>{term}</span>
                       </button>
                     ))}
@@ -255,13 +285,55 @@ const JournalSearchApp = () => {
               </div>
             </div>
 
+            {/* Campo de Busca por ISSN */}
+            <div className="lg:col-span-2">
+              <label className="block text-sm font-medium mb-2" style={{color: 'var(--js-text-secondary)'}}>
+                {language === 'en' ? 'ISSN Search' : 'Busca por ISSN'}
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4" style={{color: 'var(--js-text-muted)'}} />
+                <input
+                  type="text"
+                  placeholder="XXXX-XXXX"
+                  className={`search-input w-full pl-10 pr-4 py-2 rounded-lg ${issnSearch && !isValidISSNFormat(issnSearch) ? 'border-red-300 focus:border-red-500' : ''}`}
+                  value={issnSearch}
+                  onChange={(e) => {
+                    // Permitir apenas números e X, com formatação automática
+                    let cleaned = e.target.value.replace(/[^0-9X]/g, '').toUpperCase();
+                    
+                    // Adicionar hífen automaticamente
+                    if (cleaned.length > 4 && !cleaned.includes('-')) {
+                      cleaned = cleaned.substring(0, 4) + '-' + cleaned.substring(4);
+                    }
+                    
+                    setIssnSearch(cleaned);
+                  }}
+                  maxLength={9}
+                />
+                {issnSearch && (
+                  <button
+                    onClick={() => setIssnSearch('')}
+                    className="absolute right-3 top-3 hover:opacity-70"
+                    style={{color: 'var(--js-text-muted)'}}
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
+              {issnSearch && !isValidISSNFormat(issnSearch) && (
+                <p className="text-xs text-red-600 mt-1">
+                  {language === 'en' ? 'Invalid ISSN format. Use XXXX-XXXX' : 'Formato ISSN inválido. Use XXXX-XXXX'}
+                </p>
+              )}
+            </div>
+
             {/* Filtro ABDC */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium mb-2" style={{color: 'var(--js-text-secondary)'}}>
                 {t('labels.abdcClassification')}
               </label>
               <select
-                className="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="filter-select w-full py-2 px-3 rounded-lg"
                 value={filterABDC}
                 onChange={(e) => setFilterABDC(e.target.value)}
               >
@@ -275,11 +347,11 @@ const JournalSearchApp = () => {
 
             {/* Filtro ABS */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium mb-2" style={{color: 'var(--js-text-secondary)'}}>
                 {t('labels.absClassification')}
               </label>
               <select
-                className="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="filter-select w-full py-2 px-3 rounded-lg"
                 value={filterABS}
                 onChange={(e) => setFilterABS(e.target.value)}
               >
@@ -294,11 +366,11 @@ const JournalSearchApp = () => {
 
             {/* Filtro SJR Quartil */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium mb-2" style={{color: 'var(--js-text-secondary)'}}>
                 {t('labels.sjrQuartile')}
               </label>
               <select
-                className="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="filter-select w-full py-2 px-3 rounded-lg"
                 value={filterSJR}
                 onChange={(e) => setFilterSJR(e.target.value)}
               >
@@ -337,7 +409,7 @@ const JournalSearchApp = () => {
 
         {/* Estatísticas */}
         {showStats && (
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <div className="card rounded-lg shadow-lg p-6 mb-6">
             <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
               {t('statsPanel.title')}
@@ -571,6 +643,7 @@ const JournalSearchApp = () => {
           searchTerm={searchTerm}
           onExportCSV={handleExportCSV}
           onExportExcel={handleExportExcel}
+          onSendToSub={handleSendToSub}
         />
       </div>
 
@@ -583,7 +656,7 @@ const JournalSearchApp = () => {
       )}
 
       {/* Footer */}
-      <footer className="mt-12 py-8 border-t border-gray-200 bg-white">
+      <footer className="mt-12 py-8 card" style={{borderTop: '1px solid var(--js-border-primary)'}}>
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             {/* Footer Content with Images */}
@@ -726,7 +799,18 @@ const JournalSearchApp = () => {
       </footer>
 
       {/* Performance Monitor removido */}
-    </div>
+      
+      {/* Sistema SUB Container */}
+      <SubSystemContainer 
+        isOpen={showSubSystem} 
+        onClose={() => {
+          setShowSubSystem(false);
+          setSelectedJournalsForSub([]);
+        }}
+        selectedJournals={selectedJournalsForSub}
+      />
+      </div>
+    </ThemeProvider>
   );
 };
 

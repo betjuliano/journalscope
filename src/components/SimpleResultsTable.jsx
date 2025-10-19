@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { ExternalLink, ChevronUp, ChevronDown, Settings, Eye, EyeOff } from 'lucide-react';
+import { ExternalLink, ChevronUp, ChevronDown, Settings, Eye, EyeOff, FileText, CheckSquare, Square } from 'lucide-react';
 import { useI18n } from '../contexts/I18nContext';
 
 // Componente simples para célula de journal com expansão
 const JournalCell = ({ journal, index, searchTerm, isExpanded, onToggleExpansion, language = 'pt' }) => {
   const journalName = journal?.journal || 'Nome não disponível';
   const shouldTruncate = journalName.length > 30;
+  const isDuplicate = journal?.isDuplicate || false;
   
   const displayName = (!shouldTruncate || isExpanded) 
     ? journalName 
@@ -32,6 +33,15 @@ const JournalCell = ({ journal, index, searchTerm, isExpanded, onToggleExpansion
       >
         {highlightText(displayName, searchTerm)}
       </span>
+      
+      {isDuplicate && (
+        <span 
+          className="text-red-600 font-bold text-xs cursor-help" 
+          title={language === 'pt' ? `Duplicata encontrada (${journal.duplicateCount || 1} registros)` : `Duplicate found (${journal.duplicateCount || 1} records)`}
+        >
+          *
+        </span>
+      )}
       
       {shouldTruncate && (
         <button
@@ -159,7 +169,8 @@ const calculateQualis = (journal) => {
 
 const SimpleResultsTable = ({
   data = [],
-  searchTerm = ''
+  searchTerm = '',
+  onSendToSub = null
 }) => {
   const { t, language } = useI18n();
   const [sortField, setSortField] = useState('journal');
@@ -172,6 +183,7 @@ const SimpleResultsTable = ({
 
   // Configuração de colunas disponíveis
   const availableColumns = useMemo(() => ({
+    issn: { label: 'ISSN', required: true },
     journal: { label: 'Journal', required: true },
     abdc: { label: 'ABDC', required: false },
     abs: { label: 'ABS', required: false },
@@ -180,7 +192,6 @@ const SimpleResultsTable = ({
     ...(language === 'pt' ? { qualis: { label: 'Qualis', required: false } } : {}),
     sjrScore: { label: 'SJR Score', required: false },
     jcrImpactFactor: { label: 'JCR Impact Factor', required: false },
-    issn: { label: 'ISSN', required: false },
     publisher: { label: language === 'pt' ? 'Editora' : 'Publisher', required: false },
     predatory: { label: language === 'pt' ? 'Predatório' : 'Predatory', required: false }
   }), [language]);
@@ -192,13 +203,14 @@ const SimpleResultsTable = ({
       if (saved) {
         const parsed = JSON.parse(saved);
         // Garantir que colunas obrigatórias estejam sempre visíveis
-        return { journal: true, abdc: true, abs: true, sjrQuartile: true, jcrQuartile: true, ...(language === 'pt' ? { qualis: true } : {}), ...parsed };
+        return { issn: true, journal: true, abdc: true, abs: true, sjrQuartile: true, jcrQuartile: true, ...(language === 'pt' ? { qualis: true } : {}), ...parsed };
       }
     } catch (error) {
       console.error('Error loading column settings:', error);
     }
     // Configuração padrão
     return {
+      issn: true,
       journal: true,
       abdc: true,
       abs: true,
@@ -248,6 +260,39 @@ const SimpleResultsTable = ({
       setSortDirection('asc');
     }
   }, [sortField]);
+
+  // Utilidades de ISSN
+  const normalizeISSN = useCallback((issn) => {
+    if (!issn) return '';
+    return issn.toUpperCase().trim();
+  }, []);
+
+  const isValidISSN = useCallback((issn) => {
+    if (!issn) return false;
+    const s = normalizeISSN(issn);
+    const match = s.match(/^\d{4}-\d{3}[0-9X]$/);
+    if (!match) return false;
+    // validação de dígito verificador
+    const digits = s.replace('-', '').split('');
+    const weights = [8,7,6,5,4,3,2];
+    let sum = 0;
+    for (let i = 0; i < 7; i++) sum += parseInt(digits[i], 10) * weights[i];
+    const remainder = sum % 11;
+    const check = (11 - remainder);
+    const checkChar = check === 10 ? 'X' : (check === 11 ? '0' : String(check));
+    return digits[7] === checkChar;
+  }, [normalizeISSN]);
+
+  const duplicateIssnMap = useMemo(() => {
+    const counts = {};
+    (data || []).forEach(j => {
+      const issn = normalizeISSN(j.issn);
+      if (isValidISSN(issn)) {
+        counts[issn] = (counts[issn] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [data, normalizeISSN, isValidISSN]);
 
   // Dados processados com Qualis
   const processedData = useMemo(() => {
@@ -359,9 +404,24 @@ const SimpleResultsTable = ({
             {t('table.results', { count: data.length })}
           </h2>
           {selectedJournals.size > 0 && (
-            <span className="text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-              {selectedJournals.size} {language === 'pt' ? 'selecionados' : 'selected'}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                {selectedJournals.size} {language === 'pt' ? 'selecionados' : 'selected'}
+              </span>
+              {onSendToSub && (
+                <button
+                  onClick={() => {
+                    const selectedData = Array.from(selectedJournals).map(idx => paginatedData[idx]).filter(Boolean);
+                    onSendToSub(selectedData);
+                  }}
+                  className="inline-flex items-center gap-2 px-3 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm"
+                  title={language === 'pt' ? 'Enviar periódicos selecionados para o sistema SUB' : 'Send selected journals to SUB system'}
+                >
+                  <FileText className="h-4 w-4" />
+                  {language === 'pt' ? 'Enviar para SUB' : 'Send to SUB'}
+                </button>
+              )}
+            </div>
           )}
         </div>
 
@@ -434,6 +494,7 @@ const SimpleResultsTable = ({
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
               </th>
+              {visibleColumns.issn && <SortableHeader field="issn">ISSN</SortableHeader>}
               {visibleColumns.journal && <SortableHeader field="journal">Journal</SortableHeader>}
               {visibleColumns.abdc && <SortableHeader field="abdc">ABDC</SortableHeader>}
               {visibleColumns.abs && <SortableHeader field="abs">ABS</SortableHeader>}
@@ -442,7 +503,6 @@ const SimpleResultsTable = ({
               {visibleColumns.qualis && language === 'pt' && <SortableHeader field="qualis">Qualis</SortableHeader>}
               {visibleColumns.sjrScore && <SortableHeader field="sjrScore">SJR Score</SortableHeader>}
               {visibleColumns.jcrImpactFactor && <SortableHeader field="jcrImpactFactor">JCR Impact Factor</SortableHeader>}
-              {visibleColumns.issn && <SortableHeader field="issn">ISSN</SortableHeader>}
               {visibleColumns.publisher && <SortableHeader field="publisher">{language === 'pt' ? 'Editora' : 'Publisher'}</SortableHeader>}
               {visibleColumns.predatory && <SortableHeader field="predatory">{language === 'pt' ? 'Predatório' : 'Predatory'}</SortableHeader>}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -462,6 +522,30 @@ const SimpleResultsTable = ({
                   />
                 </td>
                 
+                {visibleColumns.issn && (
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {(() => {
+                      const issn = journal.issn || journal.jcr?.issn || '';
+                      const displayIssn = issn ? issn : '-';
+                      const isDuplicate = journal.isDuplicate || false;
+                      
+                      return (
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-600 font-mono text-xs">{displayIssn}</span>
+                          {isDuplicate && (
+                            <span 
+                              className="text-red-600 font-bold text-xs cursor-help" 
+                              title={language === 'pt' ? `Duplicata encontrada (${journal.duplicateCount || 1} registros)` : `Duplicate found (${journal.duplicateCount || 1} records)`}
+                            >
+                              *
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </td>
+                )}
+
                 {visibleColumns.journal && (
                   <td className="px-6 py-4">
                     <JournalCell
@@ -514,12 +598,6 @@ const SimpleResultsTable = ({
                 {visibleColumns.jcrImpactFactor && (
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-gray-600">{journal.jcr?.impactFactor || '-'}</span>
-                  </td>
-                )}
-
-                {visibleColumns.issn && (
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-gray-600 font-mono text-xs">{journal.issn || journal.jcr?.issn || '-'}</span>
                   </td>
                 )}
 
@@ -603,6 +681,23 @@ const SimpleResultsTable = ({
                       <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
                       </svg>
+                    </button>
+
+                    {/* Botão Ver Submissões no SUB */}
+                    <button
+                      onClick={() => {
+                        const journalData = encodeURIComponent(JSON.stringify({
+                          nome: journal.journal,
+                          issn: journal.issn,
+                          area: journal.category || 'N/A',
+                          qualis: journal.qualis || null
+                        }));
+                        window.open(`http://localhost:3001/periodicos-pesquisa?search=${encodeURIComponent(journal.journal)}`, '_blank');
+                      }}
+                      className="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 rounded-md transition-colors"
+                      title={language === 'pt' ? `Ver submissões de "${journal.journal}" no sistema SUB` : `View submissions for "${journal.journal}" in SUB system`}
+                    >
+                      <FileText className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </td>

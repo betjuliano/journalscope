@@ -1,0 +1,335 @@
+/* JournalScope Theme - Sincronização de Cores com o Sistema Principal */
+
+/* Variáveis CSS para tema JournalScope */
+:root {
+  /* Cores primárias do JournalScope */
+  --js-primary: #2563eb;
+  --js-primary-hover: #1d4ed8;
+  --js-secondary: #7c3aed;
+  --js-secondary-hover: #6d28d9;
+  
+  /* Background gradiente */
+  --js-bg-gradient-start: #f0f7ff;
+  --js-bg-gradient-end: #e0f0ff;
+  
+  /* Cores de texto */
+  --js-text-primary: #1f2937;
+  --js-text-secondary: #374151;
+  --js-text-muted: #6b7280;
+  
+  /* Cores de fundo */
+  --js-bg-white: #ffffff;
+  --js-bg-gray-50: #f9fafb;
+  --js-bg-gray-100: #f3f4f6;
+  
+  /* Bordas */
+  --js-border-gray: #e5e7eb;
+  --js-border-gray-light: #f3f4f6;
+  
+  /* Sombras */
+  --js-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --js-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --js-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  
+  /* Cores de classificação ABDC */
+  --js-abdc-a-star: #166534;
+  --js-abdc-a-star-bg: #dcfce7;
+  --js-abdc-a: #1e40af;
+  --js-abdc-a-bg: #dbeafe;
+  --js-abdc-b: #92400e;
+  --js-abdc-b-bg: #fef3c7;
+  --js-abdc-c: #991b1b;
+  --js-abdc-c-bg: #fee2e2;
+  
+  /* Cores de classificação ABS */
+  --js-abs-4-star: #166534;
+  --js-abs-4-star-bg: #dcfce7;
+  --js-abs-4: #1e40af;
+  --js-abs-4-bg: #dbeafe;
+  --js-abs-3: #92400e;
+  --js-abs-3-bg: #fef3c7;
+  --js-abs-2: #9a3412;
+  --js-abs-2-bg: #fed7aa;
+  --js-abs-1: #991b1b;
+  --js-abs-1-bg: #fee2e2;
+  
+  /* Cores de quartis */
+  --js-q1: #166534;
+  --js-q1-bg: #dcfce7;
+  --js-q2: #1e40af;
+  --js-q2-bg: #dbeafe;
+  --js-q3: #92400e;
+  --js-q3-bg: #fef3c7;
+  --js-q4: #991b1b;
+  --js-q4-bg: #fee2e2;
+  
+  /* Cores de status */
+  --js-success: #059669;
+  --js-success-bg: #d1fae5;
+  --js-warning: #d97706;
+  --js-warning-bg: #fef3c7;
+  --js-error: #dc2626;
+  --js-error-bg: #fee2e2;
+  --js-info: #2563eb;
+  --js-info-bg: #dbeafe;
+}
+
+/* Tema escuro para JournalScope */
+.dark {
+  /* Cores primárias ajustadas para dark mode */
+  --js-primary: #60a5fa;
+  --js-primary-hover: #3b82f6;
+  --js-secondary: #a78bfa;
+  --js-secondary-hover: #8b5cf6;
+  
+  /* Background gradiente escuro */
+  --js-bg-gradient-start: #0f172a;
+  --js-bg-gradient-end: #1e293b;
+  
+  /* Cores de texto */
+  --js-text-primary: #f1f5f9;
+  --js-text-secondary: #cbd5e1;
+  --js-text-muted: #94a3b8;
+  
+  /* Cores de fundo */
+  --js-bg-white: #1e293b;
+  --js-bg-gray-50: #334155;
+  --js-bg-gray-100: #475569;
+  
+  /* Bordas */
+  --js-border-gray: #334155;
+  --js-border-gray-light: #1e293b;
+  
+  /* Sombras ajustadas */
+  --js-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --js-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --js-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+/* Aplicar tema JournalScope ao projeto SUB */
+.journalscope-theme {
+  /* Background principal */
+  background: linear-gradient(135deg, var(--js-bg-gradient-start) 0%, var(--js-bg-gradient-end) 100%);
+  min-height: 100vh;
+}
+
+/* Cards com estilo JournalScope */
+.journalscope-theme .card {
+  background: var(--js-bg-white);
+  border-radius: 0.75rem;
+  box-shadow: var(--js-shadow-md);
+  border: 1px solid var(--js-border-gray-light);
+}
+
+.journalscope-theme .card-header {
+  background: var(--js-bg-gray-50);
+  border-bottom: 1px solid var(--js-border-gray);
+}
+
+/* Botões primários */
+.journalscope-theme .btn-primary {
+  background: var(--js-primary);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.journalscope-theme .btn-primary:hover {
+  background: var(--js-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--js-shadow-lg);
+}
+
+/* Botões secundários */
+.journalscope-theme .btn-secondary {
+  background: var(--js-secondary);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.journalscope-theme .btn-secondary:hover {
+  background: var(--js-secondary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--js-shadow-lg);
+}
+
+/* Inputs */
+.journalscope-theme .input {
+  padding: 0.75rem;
+  border: 1px solid var(--js-border-gray);
+  border-radius: 0.5rem;
+  background: var(--js-bg-white);
+  transition: all 0.2s ease-in-out;
+}
+
+.journalscope-theme .input:focus {
+  outline: none;
+  border-color: var(--js-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Badges de classificação */
+.journalscope-theme .badge-abdc-a-star {
+  background: var(--js-abdc-a-star-bg);
+  color: var(--js-abdc-a-star);
+}
+
+.journalscope-theme .badge-abdc-a {
+  background: var(--js-abdc-a-bg);
+  color: var(--js-abdc-a);
+}
+
+.journalscope-theme .badge-abdc-b {
+  background: var(--js-abdc-b-bg);
+  color: var(--js-abdc-b);
+}
+
+.journalscope-theme .badge-abdc-c {
+  background: var(--js-abdc-c-bg);
+  color: var(--js-abdc-c);
+}
+
+.journalscope-theme .badge-abs-4-star {
+  background: var(--js-abs-4-star-bg);
+  color: var(--js-abs-4-star);
+}
+
+.journalscope-theme .badge-abs-4 {
+  background: var(--js-abs-4-bg);
+  color: var(--js-abs-4);
+}
+
+.journalscope-theme .badge-abs-3 {
+  background: var(--js-abs-3-bg);
+  color: var(--js-abs-3);
+}
+
+.journalscope-theme .badge-abs-2 {
+  background: var(--js-abs-2-bg);
+  color: var(--js-abs-2);
+}
+
+.journalscope-theme .badge-abs-1 {
+  background: var(--js-abs-1-bg);
+  color: var(--js-abs-1);
+}
+
+/* Badges de quartis */
+.journalscope-theme .badge-q1 {
+  background: var(--js-q1-bg);
+  color: var(--js-q1);
+}
+
+.journalscope-theme .badge-q2 {
+  background: var(--js-q2-bg);
+  color: var(--js-q2);
+}
+
+.journalscope-theme .badge-q3 {
+  background: var(--js-q3-bg);
+  color: var(--js-q3);
+}
+
+.journalscope-theme .badge-q4 {
+  background: var(--js-q4-bg);
+  color: var(--js-q4);
+}
+
+/* Badges de status */
+.journalscope-theme .badge-success {
+  background: var(--js-success-bg);
+  color: var(--js-success);
+}
+
+.journalscope-theme .badge-warning {
+  background: var(--js-warning-bg);
+  color: var(--js-warning);
+}
+
+.journalscope-theme .badge-error {
+  background: var(--js-error-bg);
+  color: var(--js-error);
+}
+
+.journalscope-theme .badge-info {
+  background: var(--js-info-bg);
+  color: var(--js-info);
+}
+
+/* Tabelas */
+.journalscope-theme .table {
+  background: var(--js-bg-white);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: var(--js-shadow-md);
+}
+
+.journalscope-theme .table-header {
+  background: var(--js-bg-gray-50);
+  border-bottom: 1px solid var(--js-border-gray);
+}
+
+.journalscope-theme .table-row:hover {
+  background: var(--js-bg-gray-50);
+}
+
+/* Suporte para modo escuro em divs que atuam como linhas de resultados */
+.dark .border {
+  border-color: var(--js-border-gray) !important;
+}
+
+.dark .hover\:bg-muted\/50:hover {
+  background-color: var(--js-bg-gray-50) !important;
+}
+
+.dark .text-muted-foreground {
+  color: var(--js-text-muted) !important;
+}
+
+/* Stats cards */
+.journalscope-theme .stat-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  text-align: center;
+  box-shadow: var(--js-shadow-md);
+  transition: all 0.2s ease-in-out;
+}
+
+.journalscope-theme .stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--js-shadow-lg);
+}
+
+/* Título principal */
+.journalscope-theme .hero-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--js-primary) 0%, var(--js-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1rem;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .journalscope-theme .hero-title {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .journalscope-theme .hero-title {
+    font-size: 1.75rem;
+  }
+}

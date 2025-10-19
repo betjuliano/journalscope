@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: journalscope-redis
+    command: redis-server --appendonly yes --requirepass "JournalScope2025!"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - journalscope-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+
+  # JournalScope - Sistema Principal
+  journalscope:
+    image: periodicos:6v
+    container_name: journalscope-v6
+    environment:
+      - NODE_ENV=production
+      - VITE_APP_TITLE=JournalScope
+      - VITE_APP_VERSION=6.0.0
+      - VITE_SUB_SYSTEM_URL=https://sub.iaprojetos.com.br
+    restart: unless-stopped
+    volumes:
+      - logs-nginx:/var/log/nginx
+    networks:
+      - journalscope-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.journalscope.rule=Host(`periodicos.iaprojetos.com.br`) || Host(`periodicos.iatranscreve.com.br`)"
+      - "traefik.http.routers.journalscope.entrypoints=websecure"
+      - "traefik.http.routers.journalscope.tls.certresolver=letsencrypt"
+      - "traefik.http.services.journalscope.loadbalancer.server.port=80"
+
+  # Sistema SUB - Gestão de Submissões
+  sub-system:
+    image: sub-system:1v
+    container_name: sub-system-v1
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:./prisma/db/custom.db
+      - PORT=3001
+      - REDIS_URL=redis://:JournalScope2025!@redis:6379
+      - ALLOWED_ORIGINS=https://periodicos.iaprojetos.com.br,https://periodicos.iatranscreve.com.br
+    restart: unless-stopped
+    volumes:
+      - sub-db:/app/prisma/db
+      - sub-logs:/app/logs
+    networks:
+      - journalscope-network
+    depends_on:
+      - journalscope
+      - redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sub-system.rule=Host(`sub.iaprojetos.com.br`) || Host(`sub.iatranscreve.com.br`)"
+      - "traefik.http.routers.sub-system.entrypoints=websecure"
+      - "traefik.http.routers.sub-system.tls.certresolver=letsencrypt"
+      - "traefik.http.services.sub-system.loadbalancer.server.port=3001"
+      # CORS middleware
+      - "traefik.http.middlewares.sub-cors.headers.accesscontrolallowmethods=GET,POST,PUT,DELETE,OPTIONS"
+      - "traefik.http.middlewares.sub-cors.headers.accesscontrolallowheaders=Content-Type,Authorization,X-Requested-With"
+      - "traefik.http.middlewares.sub-cors.headers.accesscontrolalloworiginlist=https://periodicos.iaprojetos.com.br,https://periodicos.iatranscreve.com.br"
+      - "traefik.http.middlewares.sub-cors.headers.accesscontrolallowcredentials=true"
+      - "traefik.http.routers.sub-system.middlewares=sub-cors"
+
+volumes:
+  logs-nginx:
+  sub-db:
+  sub-logs:
+  redis-data:
+
+networks:
+  journalscope-network:
+    external: true

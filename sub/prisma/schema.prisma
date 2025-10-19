@@ -1,0 +1,144 @@
+// Sistema de Gestão de Submissões Acadêmicas
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Usuários do sistema
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      UserRole @default(PESQUISADOR)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  submissoesCriadas Submissao[] @relation("CriadorSubmissao")
+  revisoes         Revisao[]   @relation("RevisorRevisao")
+}
+
+// Perfis de usuário
+enum UserRole {
+  PESQUISADOR
+  EDITOR
+  ADMIN
+}
+
+// Periódicos científicos
+model Periodico {
+  id          String   @id @default(cuid())
+  nome        String
+  issn        String?  @unique
+  area        String
+  qualis      String?  // Classificação Qualis
+  descricao   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  submissoes Submissao[]
+}
+
+// Submissões de artigos
+model Submissao {
+  id              String         @id @default(cuid())
+  titulo          String
+  resumo          String
+  palavrasChave   String         // Separadas por vírgula
+  dataSubmissao   DateTime       @default(now())
+  status          StatusSubmissao @default(EM_AVALIACAO)
+  planoAcao       String?
+  criadorId       String
+  periodicoId     String         // Periódico principal (prioridade 1)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relacionamentos
+  criador               User                    @relation("CriadorSubmissao", fields: [criadorId], references: [id])
+  periodico             Periodico               @relation(fields: [periodicoId], references: [id])
+  autores               Autor[]
+  revisoes              Revisao[]
+  historico             HistoricoStatus[]
+  periodicosAlternativos PeriodicoAlternativo[]
+
+  @@map("submissoes")
+}
+
+// Autores das submissões
+model Autor {
+  id          String @id @default(cuid())
+  nome        String
+  email       String?
+  instituicao String?
+  submissaoId String
+
+  // Relacionamentos
+  submissao Submissao @relation(fields: [submissaoId], references: [id], onDelete: Cascade)
+
+  @@map("autores")
+}
+
+// Status das submissões
+enum StatusSubmissao {
+  EM_AVALIACAO
+  APROVADO
+  REJEITADO
+  REVISAO_SOLICITADA
+  SUBMETIDO_NOVAMENTE
+}
+
+// Revisões dos artigos
+model Revisao {
+  id                String   @id @default(cuid())
+  dataRecebimento   DateTime
+  numeroRevisores   Int
+  comentarios       String   // Comentários dos revisores
+  revisorId         String?
+  submissaoId       String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relacionamentos
+  revisor   User?      @relation("RevisorRevisao", fields: [revisorId], references: [id])
+  submissao Submissao  @relation(fields: [submissaoId], references: [id], onDelete: Cascade)
+
+  @@map("revisoes")
+}
+
+// Histórico de status das submissões
+model HistoricoStatus {
+  id          String   @id @default(cuid())
+  status      StatusSubmissao
+  data        DateTime @default(now())
+  submissaoId String
+
+  // Relacionamentos
+  submissao Submissao @relation(fields: [submissaoId], references: [id], onDelete: Cascade)
+
+  @@map("historico_status")
+}
+
+// Periódicos alternativos (backup) para submissões
+// Em caso de rejeição, o artigo pode ser submetido aos periódicos seguintes
+model PeriodicoAlternativo {
+  id              String   @id @default(cuid())
+  submissaoId     String
+  periodicoNome   String   // Nome do periódico da base principal
+  periodicoISSN   String?  // ISSN se disponível
+  periodicoArea   String?  // Área do periódico
+  prioridade      Int      // 2, 3, 4... (1 é o periódico principal)
+  motivo          String?  // Motivo da escolha deste periódico alternativo
+  createdAt       DateTime @default(now())
+
+  // Relacionamentos
+  submissao Submissao @relation(fields: [submissaoId], references: [id], onDelete: Cascade)
+
+  @@map("periodicos_alternativos")
+  @@unique([submissaoId, prioridade])
+}
