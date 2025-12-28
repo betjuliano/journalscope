@@ -8,7 +8,11 @@ dist/
 *.log
 .DS_Store
 .vscode/
+
+# environment files
 .env
+.env.*
+*.env
 
 # editors
 .idea/
@@ -17,3 +21,41 @@ dist/
 # OS files
 Thumbs.db
 
+# SQL files (manter localmente, não versionar)
+sql/
+supabase/
+*.sql
+
+# Documentation local (apenas README no repo)
+COMO_*.md
+GUIA_*.md
+DEPLOY_*.md
+CHECKLIST_*.md
+COMANDOS_*.md
+COMMANDS_*.md
+CONFIGURACAO_*.md
+INTEGRACAO_*.md
+NOVAS_*.md
+README_*.md
+RELATORIO_*.md
+RESUMO_*.md
+SISTEMA_*.md
+SUPABASE_*.md
+
+# Scripts de deploy/instalação
+*.bat
+*.sh
+!scripts/*.js
+*.ps1
+*.tar.gz
+*.zip
+
+# Docker files temporários
+docker-compose-*.yml
+Dockerfile.*
+!Dockerfile
+
+# Outros
+upload-files/
+journalscope.env
+.kiro/
