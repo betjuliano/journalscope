@@ -8,8 +8,8 @@ import { useI18n } from './contexts/I18nContext';
 import { intelligentPreload, preloadOnUserInteraction } from './utils/preloadComponents';
 import './components/index.css';
 
-// Lazy load do componente principal
-const JournalSearchApp = lazy(() => import('./components/JournalSearchApp'));
+// Lazy load do componente principal integrado
+const MainApp = lazy(() => import('./components/MainApp'));
 
 function App() {
   const { t } = useI18n();
@@ -38,13 +38,13 @@ function App() {
   // Enhanced initial load time tracking with detailed performance monitoring
   useEffect(() => {
     const appStartTime = performance.mark ? performance.mark('app-start') : performance.now();
-    
+
     if (!isLoading && journalsData && journalsData.length > 0) {
       const loadEndTime = performance.now();
-      const totalLoadTime = performance.mark ? 
+      const totalLoadTime = performance.mark ?
         performance.measure('app-load-time', 'app-start').duration :
         loadEndTime - appStartTime;
-      
+
       // Detailed performance metrics with enhanced monitoring
       const detailedMetrics = {
         initialLoadTime: totalLoadTime,
@@ -62,12 +62,12 @@ function App() {
         performanceScore: calculatePerformanceScore(totalLoadTime, journalsData.length),
         optimizationLevel: getOptimizationLevel(totalLoadTime)
       };
-      
+
       setPerformanceMetrics(prev => ({
         ...prev,
         ...detailedMetrics
       }));
-      
+
       // Enhanced development performance logging
       if (import.meta.env.DEV) {
         console.group('🚀 JournalScope Performance Metrics (Enhanced)');
@@ -76,21 +76,21 @@ function App() {
         console.log(`⚡ Load rate: ${detailedMetrics.loadRate.toFixed(2)} journals/ms`);
         console.log(`🎯 Performance score: ${detailedMetrics.performanceScore}/100`);
         console.log(`🔧 Optimization level: ${detailedMetrics.optimizationLevel}`);
-        
+
         if (detailedMetrics.memoryUsage) {
           console.log(`💾 Memory usage: ${detailedMetrics.memoryUsage.used}MB / ${detailedMetrics.memoryUsage.total}MB (limit: ${detailedMetrics.memoryUsage.limit}MB)`);
-          
+
           // Memory usage warnings
           const memoryUsagePercent = (detailedMetrics.memoryUsage.used / detailedMetrics.memoryUsage.limit) * 100;
           if (memoryUsagePercent > 80) {
             console.warn(`💾 High memory usage: ${memoryUsagePercent.toFixed(1)}%`);
           }
         }
-        
+
         if (navigator.connection) {
           console.log(`🌐 Connection: ${navigator.connection.effectiveType}`);
         }
-        
+
         // Enhanced performance warnings with recommendations
         if (totalLoadTime > 3000) {
           console.warn('🐌 Slow initial load detected (>3s)');
@@ -101,7 +101,7 @@ function App() {
         } else {
           console.log('✅ Fast load time achieved - excellent performance!');
         }
-        
+
         // Performance insights
         if (detailedMetrics.loadRate > 10) {
           console.log('⚡ Excellent data processing rate');
@@ -110,14 +110,14 @@ function App() {
         } else {
           console.warn('🐌 Slow data processing rate - consider optimization');
         }
-        
+
         console.groupEnd();
       }
-      
+
       // Store enhanced performance data for analytics
       if (window.JOURNALSCOPE_CONFIG?.features?.analytics) {
         localStorage.setItem('journalscope_last_performance', JSON.stringify(detailedMetrics));
-        
+
         // Store performance history for trend analysis
         const performanceHistory = JSON.parse(localStorage.getItem('journalscope_performance_history') || '[]');
         performanceHistory.push({
@@ -126,12 +126,12 @@ function App() {
           journalCount: journalsData.length,
           performanceScore: detailedMetrics.performanceScore
         });
-        
+
         // Keep only last 10 entries
         if (performanceHistory.length > 10) {
           performanceHistory.shift();
         }
-        
+
         localStorage.setItem('journalscope_performance_history', JSON.stringify(performanceHistory));
       }
     }
@@ -142,7 +142,7 @@ function App() {
     const baseScore = 100;
     const loadTimePenalty = Math.min(loadTime / 50, 50); // Max 50 points penalty for load time
     const dataEfficiencyBonus = Math.min(dataCount / 1000, 10); // Max 10 points bonus for data efficiency
-    
+
     return Math.max(0, Math.round(baseScore - loadTimePenalty + dataEfficiencyBonus));
   };
 
@@ -159,7 +159,7 @@ function App() {
   const shouldShowPerformanceToggle = useMemo(() => {
     return import.meta.env.DEV || localStorage.getItem('journalscope_show_performance') === 'true';
   }, []);
-  
+
   // Show optimization monitor in development
   const shouldShowOptimizationToggle = useMemo(() => {
     return import.meta.env.DEV || localStorage.getItem('journalscope_show_optimization') === 'true';
@@ -167,7 +167,7 @@ function App() {
 
   if (isLoading) {
     return (
-      <LoadingScreen 
+      <LoadingScreen
         processingStatus={t('loading.processingData')}
         dataSource={{
           abdc: { count: stats.withABDC || 0, loaded: !!stats.withABDC },
@@ -189,7 +189,7 @@ function App() {
   return (
     <div className="App">
       <Suspense fallback={
-        <LoadingScreen 
+        <LoadingScreen
           processingStatus={t('loading.loadingApp')}
           dataSource={{
             abdc: { count: stats.withABDC || 0, loaded: !!stats.withABDC },
@@ -202,9 +202,9 @@ function App() {
           }}
         />
       }>
-        <JournalSearchApp />
+        <MainApp />
       </Suspense>
-      
+
       {/* Performance Monitor */}
       {shouldShowPerformanceToggle && (
         <PerformanceMonitor
@@ -214,7 +214,7 @@ function App() {
           dataLoadTime={performanceMetrics.dataLoadTime}
         />
       )}
-      
+
       {/* Optimization Monitor */}
       {shouldShowOptimizationToggle && (
         <OptimizationMonitor

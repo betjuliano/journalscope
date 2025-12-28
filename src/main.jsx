@@ -4,6 +4,7 @@ import App from './App';
 import { I18nProvider } from './contexts/I18nContext';
 import './components/index.css';
 import './components/JournalScope.css';
+import './components/ForceStyles.css';
 
 // Configurações globais para JournalScope
 window.JOURNALSCOPE_CONFIG = {

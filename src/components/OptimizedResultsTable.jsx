@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import { Search, ChevronUp, ChevronDown, Download, ExternalLink, Settings, Eye, EyeOff } from 'lucide-react';
-import { 
-  truncateJournalName, 
-  needsTruncation, 
-  validateJournalData, 
+import {
+  truncateJournalName,
+  needsTruncation,
+  validateJournalData,
   getSafeJournalNameForRendering,
   createJournalCellFallback,
   sanitizeJournalName
@@ -91,9 +91,9 @@ const ClassificationBadge = memo(({ type, value }) => {
 });
 
 // Memoized component for journal cell with auto-expansion
-const JournalCell = memo(({ 
-  journal, 
-  index, 
+const JournalCell = memo(({
+  journal,
+  index,
   searchTerm
 }) => {
   // Memoized display data calculation
@@ -101,7 +101,7 @@ const JournalCell = memo(({
     try {
       // Get journal name safely with fallback
       const journalName = journal?.journal || journal?.name || journal?.title || 'Nome não disponível';
-      
+
       // Validate and sanitize the name
       if (!journalName || typeof journalName !== 'string') {
         return {
@@ -110,17 +110,17 @@ const JournalCell = memo(({
           isValid: true
         };
       }
-      
+
       const sanitizedName = journalName.trim();
-      
+
       // Debug log for development
       if (import.meta.env.DEV && index < 5) {
         console.log(`Journal ${index}: "${sanitizedName}" (${sanitizedName.length} chars)`);
       }
-      
+
       // Use a more reasonable threshold for auto-expansion
       const needsAutoExpand = sanitizedName.length > 50;
-      
+
       return {
         journalName: sanitizedName,
         needsAutoExpand,
@@ -128,7 +128,7 @@ const JournalCell = memo(({
       };
     } catch (error) {
       console.error(`[OptimizedResultsTable] Error processing display data for journal ${index}:`, error);
-      
+
       return {
         journalName: 'Erro no nome',
         needsAutoExpand: false,
@@ -160,8 +160,8 @@ const JournalCell = memo(({
       <div className="journal-cell-container">
         <div className="journal-cell-fallback" data-testid={`journal-cell-fallback-${index}`}>
           <span className="text-gray-900">{displayData.journalName}</span>
-          <span 
-            className="text-xs text-red-500 ml-2" 
+          <span
+            className="text-xs text-red-500 ml-2"
             title={`Fallback mode active: ${displayData.error || 'Unknown error'}`}
           >
             ⚠
@@ -173,7 +173,7 @@ const JournalCell = memo(({
 
   return (
     <div className="journal-cell-container">
-      <div 
+      <div
         className={`journal-cell-auto-expand ${displayData.needsAutoExpand ? 'two-line' : 'single-line'}`}
         title={displayData.journalName}
         role="gridcell"
@@ -202,15 +202,14 @@ const SortableHeader = memo(({ field, children, className = '', onSort, sortFiel
     scope="col"
     tabIndex={0}
     aria-sort={
-      sortField === field 
+      sortField === field
         ? (sortDirection === 'asc' ? 'ascending' : 'descending')
         : 'none'
     }
-    aria-label={`${children}. ${
-      sortField === field 
+    aria-label={`${children}. ${sortField === field
         ? `Currently sorted ${sortDirection === 'asc' ? 'ascending' : 'descending'}. Click to reverse`
         : 'Click to sort'
-    }`}
+      }`}
   >
     <div className="flex items-center gap-2">
       <span>{children}</span>
@@ -242,7 +241,7 @@ const OptimizedResultsTable = ({
   const [isMobile, setIsMobile] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(100);
-  
+
   // Estado para controlar journals expandidos
   const [expandedJournals, setExpandedJournals] = useState(new Set());
 
@@ -323,7 +322,7 @@ const OptimizedResultsTable = ({
   // Memoized processed data with Qualis calculation and performance monitoring
   const processedData = useMemo(() => {
     const startTime = performance.now();
-    
+
     const processed = data.map(journal => ({
       ...journal,
       qualis: calculateQualis(journal)
@@ -331,7 +330,7 @@ const OptimizedResultsTable = ({
 
     const processingTime = performance.now() - startTime;
     recordRenderOperation(processingTime, 'DataProcessing');
-    
+
     if (import.meta.env.DEV && processingTime > PERFORMANCE_THRESHOLDS.RENDER_TIME_WARNING) {
       console.log(`⚠️ Data processing took ${processingTime.toFixed(2)}ms for ${data.length} journals`);
     }
@@ -375,7 +374,7 @@ const OptimizedResultsTable = ({
         bValue = bValue.toString().toLowerCase();
       }
 
-      const result = sortDirection === 'asc' 
+      const result = sortDirection === 'asc'
         ? (aValue > bValue ? 1 : aValue < bValue ? -1 : 0)
         : (aValue < bValue ? 1 : aValue > bValue ? -1 : 0);
 
@@ -384,7 +383,7 @@ const OptimizedResultsTable = ({
 
     const sortTime = performance.now() - startTime;
     recordRenderOperation(sortTime, 'TableSorting');
-    
+
     if (import.meta.env.DEV && sortTime > PERFORMANCE_THRESHOLDS.RENDER_TIME_WARNING) {
       console.log(`⚠️ Sorting took ${sortTime.toFixed(2)}ms for ${processedData.length} journals`);
     }
@@ -395,7 +394,7 @@ const OptimizedResultsTable = ({
   // Memoized visible columns
   const visibleColumns = useMemo(() => {
     const mandatoryColumns = columnConfiguration;
-    
+
     const filteredOptionalColumns = Object.keys(optionalColumns)
       .filter(key => {
         // Skip sjrHIndex in optional if it's already in mandatory columns (English mode)
@@ -501,35 +500,32 @@ const OptimizedResultsTable = ({
         case 'sjrQuartile':
         case 'jcrQuartile':
           return value ? (
-            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-              value === 'Q1' ? 'bg-green-100 text-green-800' :
-              value === 'Q2' ? 'bg-blue-100 text-blue-800' :
-              value === 'Q3' ? 'bg-yellow-100 text-yellow-800' :
-              value === 'Q4' ? 'bg-red-100 text-red-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>
+            <span className={`px-2 py-1 text-xs font-medium rounded-full ${value === 'Q1' ? 'bg-green-100 text-green-800' :
+                value === 'Q2' ? 'bg-blue-100 text-blue-800' :
+                  value === 'Q3' ? 'bg-yellow-100 text-yellow-800' :
+                    value === 'Q4' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+              }`}>
               {value}
             </span>
           ) : <span className="text-gray-400">-</span>;
 
         case 'qualis':
           return value && value !== '-' ? (
-            <span className={`px-2 py-1 text-xs font-bold rounded-full ${
-              value === 'MB' ? 'bg-purple-100 text-purple-800' :
-              value === 'B' ? 'bg-blue-100 text-blue-800' :
-              value === 'R' ? 'bg-yellow-100 text-yellow-800' :
-              value === 'F' ? 'bg-red-100 text-red-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>
+            <span className={`px-2 py-1 text-xs font-bold rounded-full ${value === 'MB' ? 'bg-purple-100 text-purple-800' :
+                value === 'B' ? 'bg-blue-100 text-blue-800' :
+                  value === 'R' ? 'bg-yellow-100 text-yellow-800' :
+                    value === 'F' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+              }`}>
               {value}
             </span>
           ) : <span className="text-gray-400">-</span>;
 
         case 'predatory':
           return value !== null && value !== undefined ? (
-            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-              value ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-            }`}>
+            <span className={`px-2 py-1 text-xs font-medium rounded-full ${value ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+              }`}>
               {value ? 'Yes' : 'No'}
             </span>
           ) : <span className="text-gray-400">-</span>;
@@ -543,12 +539,12 @@ const OptimizedResultsTable = ({
       }
     } catch (error) {
       console.error(`[OptimizedResultsTable] Error rendering cell for column ${columnKey}, index ${index}:`, error);
-      
+
       return (
         <div className="cell-error-fallback" data-testid={`cell-error-fallback-${columnKey}-${index}`}>
           <span className="text-gray-500">Error</span>
-          <span 
-            className="text-xs text-red-500 ml-1" 
+          <span
+            className="text-xs text-red-500 ml-1"
             title={`Error rendering column ${columnKey}: ${error.message}`}
           >
             ⚠
@@ -600,7 +596,7 @@ const OptimizedResultsTable = ({
             <Download className="h-4 w-4" />
             CSV
           </button>
-          
+
           <button
             onClick={() => onExportExcel(data)}
             className="btn btn-outline text-sm"
@@ -609,7 +605,7 @@ const OptimizedResultsTable = ({
             <Download className="h-4 w-4" />
             Excel
           </button>
-          
+
           {/* Column settings button */}
           <div className="relative">
             <button
@@ -661,14 +657,14 @@ const OptimizedResultsTable = ({
 
       {/* Table */}
       <div className="overflow-x-auto" role="region" aria-label="Journal results table">
-        <table 
-          className="journal-table min-w-full divide-y divide-gray-200" 
+        <table
+          className="journal-table min-w-full divide-y divide-gray-200"
           role="table"
           aria-label={`Table with ${displayedData.length} journals found`}
         >
           <thead className="bg-gray-50" role="rowgroup">
             <tr role="row">
-              <th 
+              <th
                 className="px-6 py-3 text-left"
                 role="columnheader"
                 scope="col"
@@ -686,8 +682,8 @@ const OptimizedResultsTable = ({
                 />
               </th>
               {Object.entries(visibleColumns).map(([key, column]) => (
-                <SortableHeader 
-                  key={key} 
+                <SortableHeader
+                  key={key}
                   field={column.field}
                   onSort={handleSort}
                   sortField={sortField}
@@ -697,7 +693,7 @@ const OptimizedResultsTable = ({
                   {column.label}
                 </SortableHeader>
               ))}
-              <th 
+              <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 role="columnheader"
                 scope="col"
@@ -711,9 +707,8 @@ const OptimizedResultsTable = ({
               <tr
                 key={index}
                 role="row"
-                className={`hover:bg-gray-50 transition-colors ${
-                  selectedJournals.has(index) ? 'bg-blue-50' : ''
-                }`}
+                className={`hover:bg-gray-50 transition-colors ${selectedJournals.has(index) ? 'bg-blue-50' : ''
+                  }`}
                 aria-selected={selectedJournals.has(index)}
               >
                 <td className="px-6 py-4 whitespace-nowrap" role="cell">
@@ -734,16 +729,18 @@ const OptimizedResultsTable = ({
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => {
-                        console.log('Action button clicked for journal:', journal.journal);
-                        // Aqui você pode adicionar a lógica para abrir detalhes do journal
-                        // Por exemplo: window.open(journal.url) ou navegar para página de detalhes
-                        alert(`Detalhes do journal: ${journal.journal}`);
+                        // Disparar evento customizado para criar submissão
+                        const event = new CustomEvent('createSubmissionFromJournal', {
+                          detail: { journalName: journal.journal }
+                        });
+                        window.dispatchEvent(event);
                       }}
-                      className="inline-flex items-center justify-center p-2 text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 rounded-md transition-colors duration-200"
-                      title={`Ver detalhes de ${journal.journal || 'journal'}`}
-                      aria-label={`Ver detalhes de ${journal.journal || 'journal'}`}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-md transition-all duration-200 shadow-sm hover:shadow-md"
+                      title={`Criar submissão para ${journal.journal || 'journal'}`}
+                      aria-label={`Criar submissão para ${journal.journal || 'journal'}`}
                     >
                       <ExternalLink className="h-4 w-4" />
+                      <span>Submeter</span>
                     </button>
                   </div>
                 </td>

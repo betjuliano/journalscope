@@ -6,6 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#2563eb" />
   
+  <!-- Cache Busting -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="build-timestamp" content="<?= time() ?>" />
+  
   <!-- Título e Descrição -->
   <title>JournalScope - Sistema de Consulta de Journals Acadêmicos</title>
   <meta name="description" content="Ferramenta completa para consulta e análise de classificações ABDC, ABS e Wiley de journals acadêmicos. Base de dados unificada com mais de 4.000 periódicos científicos." />
@@ -92,6 +98,10 @@
   <!-- Fontes do Google (opcional - pode ser removido se usar apenas Tailwind) -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   
+  <!-- CSS DE EMERGÊNCIA - CARREGAMENTO PRIORITÁRIO -->
+  <link rel="stylesheet" href="/emergency-styles.css" />
+  <link rel="preload" href="/emergency-styles.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+  
   <!-- CSS Inline para Loading -->
   <style>
     /* CSS crítico para carregamento inicial */
@@ -102,7 +112,123 @@
         sans-serif;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
-      background-color: #f8fafc;
+      background: linear-gradient(135deg, #f0f7ff 0%, #e0f0ff 100%) !important;
+      min-height: 100vh !important;
+    }
+    
+    /* FORÇAR ESTILOS CRÍTICOS INLINE */
+    .journalscope-container {
+      min-height: 100vh !important;
+      background: linear-gradient(135deg, #f0f7ff 0%, #e0f0ff 100%) !important;
+    }
+    
+    .hero-title {
+      font-size: 2.1rem !important;
+      font-weight: 800 !important;
+      background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+      margin-bottom: 1rem !important;
+      display: block !important;
+      text-align: center !important;
+    }
+    
+    .stats-grid {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
+      gap: 1rem !important;
+      max-width: 80rem !important;
+      margin: 0 auto 2rem !important;
+    }
+    
+    .stat-card {
+      background: rgba(255, 255, 255, 0.9) !important;
+      backdrop-filter: blur(10px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      border-radius: 0.75rem !important;
+      padding: 1rem !important;
+      text-align: center !important;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+      transition: all 0.2s ease-in-out !important;
+    }
+    
+    .stat-number {
+      font-size: 1.5rem !important;
+      font-weight: 700 !important;
+      margin-bottom: 0.25rem !important;
+    }
+    
+    .stat-label {
+      font-size: 0.75rem !important;
+      color: #6b7280 !important;
+      font-weight: 500 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.05em !important;
+    }
+    
+    .card {
+      background: white !important;
+      border-radius: 0.75rem !important;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+      margin-bottom: 1.5rem !important;
+      overflow: hidden !important;
+    }
+    
+    .quick-filters {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 0.5rem !important;
+      justify-content: center !important;
+      padding: 1rem !important;
+    }
+    
+    .quick-filter-btn {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 0.25rem !important;
+      padding: 0.5rem 0.75rem !important;
+      font-size: 0.875rem !important;
+      font-weight: 500 !important;
+      border-radius: 0.5rem !important;
+      border: none !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease-in-out !important;
+    }
+    
+    .results-table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+      background: white !important;
+    }
+    
+    .table-header {
+      background: #f9fafb !important;
+      border-bottom: 1px solid #e5e7eb !important;
+    }
+    
+    .table-header th {
+      padding: 0.75rem 1rem !important;
+      text-align: left !important;
+      font-size: 0.75rem !important;
+      font-weight: 600 !important;
+      color: #374151 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.05em !important;
+    }
+    
+    .table-row {
+      border-bottom: 1px solid #f3f4f6 !important;
+      transition: background-color 0.2s ease-in-out !important;
+    }
+    
+    .table-row:hover {
+      background: #f9fafb !important;
+    }
+    
+    .table-cell {
+      padding: 1rem !important;
+      vertical-align: top !important;
     }
     
     code {
@@ -184,6 +310,10 @@
   <meta name="msapplication-TileColor" content="#2563eb" />
   
   <!-- Service Worker desabilitado -->
+  <!-- Cache busting para forçar reload -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   
   <!-- CSS de Reset Básico -->
   <style>
@@ -251,8 +381,30 @@
     </div>
   <![endif]-->
   
-  <!-- Script para detectar JavaScript e remover loading -->
+  <!-- Script para limpar cache e detectar JavaScript -->
   <script type="module">
+    // Limpar cache do navegador para garantir versão mais recente
+    if ('caches' in window) {
+      caches.keys().then(function(names) {
+        for (let name of names) {
+          caches.delete(name);
+          console.log('🗑️ Cache cleared:', name);
+        }
+      });
+    }
+    
+    // Forçar reload se versão em cache for muito antiga (apenas uma vez por sessão)
+    const sessionKey = 'journalscope_session_' + Date.now().toString().slice(0, -5); // 5 min precision
+    const lastSession = sessionStorage.getItem('journalscope_last_session');
+    
+    if (!lastSession || lastSession !== sessionKey.slice(0, -1)) {
+      sessionStorage.setItem('journalscope_last_session', sessionKey.slice(0, -1));
+      if (lastSession) {
+        console.log('🔄 Forçando reload para versão mais recente');
+        window.location.reload(true);
+      }
+    }
+    
     // Remover loading quando a página estiver carregada
     window.addEventListener('load', function() {
       const loading = document.querySelector('.initial-loading');
